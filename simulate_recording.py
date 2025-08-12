@@ -1,12 +1,21 @@
+import json
 import os
 import time
 
 import cv2
 import mido
+from pythonosc.udp_client import SimpleUDPClient
 
 import track_hands
 import draw_keys_3d
 
+FAST_MODE = True  # No sleeping to speed up the simulation
+
+with open('config.json', 'r') as file:
+    config = json.load(file)
+config = config[os.path.basename(__file__)]
+
+osc_client = SimpleUDPClient("127.0.0.1", config["port_outgoing"])
 
 def parse_midi_mgs(filename):
     result = []
@@ -100,15 +109,21 @@ for event in all_events:
         start_recording - (time.time() - start_real)
     if time_to_sleep < 0:  # Make sure time to sleep is not negative.
         time_to_sleep = 0
-    time.sleep(time_to_sleep)
+    if not FAST_MODE:
+        time.sleep(time_to_sleep)
 
     if event['type'] == 'midi':
         print(f"{event['timestamp']}: {event['message']}")
         msg = event['message']
         if msg.type == 'note_on' and msg.velocity > 0:
             current_notes.append(msg.note)
-            print("Closest hand:", closest_hand(
-                msg.note, left_hand, right_hand))
+            hand = closest_hand(msg.note, left_hand, right_hand)
+            print("Closest hand:", hand)
+            if hand == 'left_hand': 
+                hand = 'left'
+            if hand == 'right_hand':
+                hand = 'right'
+            osc_client.send_message(f"/{hand}/note_on", [msg.note, msg.velocity])
         elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
             if msg.note in current_notes:
                 current_notes.remove(msg.note)
@@ -118,7 +133,6 @@ for event in all_events:
         img = cv2.imread(img_path)
         if img is not None:
             img, result = track_hands.analyze_frame(img)
-            # print(result)
             left_hand, right_hand = get_hand_positions(result)
             for midi_pitch in current_notes:
                 img = draw_keys_3d.draw_key(img, midi_pitch)

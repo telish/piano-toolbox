@@ -1,6 +1,6 @@
 {
     "track_hands.py": {
-        "port_outgoing": 9876
+        "port_outgoing": 9999
     },
     "hand_mapper_camera.py": {
         "port_incoming_hands": 9876,
@@ -16,5 +16,8 @@
                 "path": "./recording"
             }
         ]
+    },
+    "simulate_recording.py": {
+        "port_outgoing": 9876
     }
 }
