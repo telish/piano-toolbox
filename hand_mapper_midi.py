@@ -1,10 +1,8 @@
 """Kalman filter based hand mapping."""
 
-import os
 from collections import namedtuple
 import math
 
-import mido
 import scipy.stats
 
 
@@ -147,7 +145,7 @@ class KalmanMapper(object):
             self.last_was_left_hand = False
 
 
-if (name == '__main__'):
+if __name__ == '__main__':
     mapper = KalmanMapper()
     event = MidiEvent(72, True, 0.0)
     mapper.midi_event(event)
