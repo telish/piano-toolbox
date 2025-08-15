@@ -5,6 +5,7 @@ import time
 import cv2
 import mido
 from pythonosc.udp_client import SimpleUDPClient
+import numpy as np
 
 import track_hands
 import draw_keys_3d
@@ -16,6 +17,7 @@ with open('config.json', 'r') as file:
 config = config[os.path.basename(__file__)]
 
 osc_client = SimpleUDPClient("127.0.0.1", config["port_outgoing"])
+
 
 def parse_midi_mgs(filename):
     result = []
@@ -63,7 +65,6 @@ def get_hand_positions(result):
 def closest_hand(midi_pitch, left_pos, right_pos):
     # Get the outline of the midi pitch and compare the x position of the hands with the outline
     # Return which one is closer to the outline?
-
     if left_pos is None and right_pos is None:
         return None
     elif left_pos is None:
@@ -71,10 +72,13 @@ def closest_hand(midi_pitch, left_pos, right_pos):
     elif right_pos is None:
         return 'left'
 
-    #  img = draw_keys_3d.draw_key(img, midi_pitch)
-    outline = draw_keys_3d.key_coords_3d(midi_pitch)
-    left_dist = abs(left_pos[0] - outline[0][0])
-    right_dist = abs(right_pos[1] - outline[1][0])
+    outline = draw_keys_3d.pixel_coordinates_of_key(midi_pitch)
+    key_mean_x = np.mean(outline[:, :, 0])
+    left_x = left_pos[1] * track_hands.image_width_px
+    right_x = right_pos[0] * track_hands.image_width_px
+
+    left_dist = abs(left_x - key_mean_x)
+    right_dist = abs(right_x - key_mean_x)
     if left_dist < right_dist:
         return 'left'
     else:
@@ -119,11 +123,12 @@ for event in all_events:
             current_notes.append(msg.note)
             hand = closest_hand(msg.note, left_hand, right_hand)
             print("Closest hand:", hand)
-            if hand == 'left_hand': 
+            if hand == 'left_hand':
                 hand = 'left'
             if hand == 'right_hand':
                 hand = 'right'
-            osc_client.send_message(f"/{hand}/note_on", [msg.note, msg.velocity])
+            osc_client.send_message(
+                f"/{hand}/note_on", [msg.note, msg.velocity])
         elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
             if msg.note in current_notes:
                 current_notes.remove(msg.note)

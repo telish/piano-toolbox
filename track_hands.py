@@ -10,11 +10,13 @@ MP_MIDDLE_FINGER_TIP = 12
 MP_RING_FINGER_TIP = 16
 MP_PINKY_TIP = 20
 
+# This is set to actual values once analyze_frame is first called
+image_height_px, image_width_px = 0, 0
+
 
 def analyze_frame(frame):
-    # Flip the frame for a more natural view
-    # frame = cv2.flip(frame, 1)
-    h, w, _ = frame.shape
+    global image_height_px, image_width_px
+    image_height_px, image_width_px, _ = frame.shape
 
     # Convert the frame to RGB (MediaPipe expects RGB images)
     rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -32,17 +34,21 @@ def analyze_frame(frame):
         for idx, hand_landmarks in enumerate(mp_results.multi_hand_landmarks):
             # Determine the hand label
             label = mp_results.multi_handedness[idx].classification[0].label
-            udp_client.send_message(f"/{label.lower()}/visible", 1)
+            if label.lower() == "left":
+                label = "right"
+            elif label.lower() == "right":
+                label = "left"
+            udp_client.send_message(f"/{label}/visible", 1)
 
             x_coords = [landmark.x for landmark in hand_landmarks.landmark]
             y_coords = [landmark.y for landmark in hand_landmarks.landmark]
             z_coords = [landmark.z for landmark in hand_landmarks.landmark]
 
-            if label.lower() == "left":
+            if label == "left":
                 result["left_visible"] = True
                 result["left_landmarks_xyz"] = (x_coords, y_coords, z_coords)
 
-            elif label.lower() == "right":
+            elif label == "right":
                 result["right_visible"] = True
                 result["right_landmarks_xyz"] = (x_coords, y_coords, z_coords)
 
@@ -53,9 +59,24 @@ def analyze_frame(frame):
                 flat_coords.append(y)
                 flat_coords.append(z)
 
-            mp.solutions.drawing_utils.draw_landmarks(
-                frame, hand_landmarks,  mp.solutions.hands.HAND_CONNECTIONS)
-            udp_client.send_message(f"/{label.lower()}/landmarks", flat_coords)
+            if label == "left":
+                mp.solutions.drawing_utils.draw_landmarks(
+                    frame, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(0, 0, 200), thickness=2, circle_radius=2),
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(255, 255, 255), thickness=2)
+                )
+            elif label == "right":
+                mp.solutions.drawing_utils.draw_landmarks(
+                    frame, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(0, 200, 0), thickness=2, circle_radius=2),
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(255, 255, 255), thickness=2)
+                )
+
+            udp_client.send_message(f"/{label}/landmarks", flat_coords)
 
     if not result["left_visible"]:
         udp_client.send_message(f"/left/visible", 0)

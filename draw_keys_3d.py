@@ -77,6 +77,8 @@ def calibrate_3d():
 
 
 def white_key_coords_3d(white_key_index):
+    """Returns the 3D coordinates of a white key given its index. The unit is cm. 
+    The z-axis is always 0. (0, 0, 0) is the bottom left corner of the lowest key."""
     x_left = white_key_index * WHITE_KEY_WIDTH
     x_right = x_left + WHITE_KEY_WIDTH
     return np.array([
@@ -134,9 +136,15 @@ def key_coords_3d(midi_pitch):
         raise ValueError(f"Invalid MIDI pitch: {midi_pitch}")
 
 
-def draw_key(img, midi_pitch):
+def pixel_coordinates_of_key(midi_pitch):
+    """Projects the 3D coordinates of a key onto the 2D image plane to get the pixel coordinates."""
     outline = key_coords_3d(midi_pitch)
     image_points, _ = cv2.projectPoints(outline, rvec, tvec, mtx, dist)
+    return image_points
+
+
+def draw_key(img, midi_pitch):
+    image_points = pixel_coordinates_of_key(midi_pitch)
     draw_polygon(img, image_points)
     return img
 
