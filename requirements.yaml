@@ -6,3 +6,4 @@ dependencies:
       - python-rtmidi
       - mediapipe
       - sounddevice
+      - shapely
