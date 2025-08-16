@@ -111,13 +111,13 @@ def closest_hand_and_finger(midi_pitch, mp_result):
 
 
 midi_events = parse_midi_mgs("recording/midi/midi_msg.txt")
-for event in midi_events:
-    print(f"{event['timestamp']}: {event['message']}")
+# for event in midi_events:
+#     print(f"{event['timestamp']}: {event['message']}")
 
 video_path = "recording/video"
 video_events = parse_video(video_path)
-for event in video_events:
-    print(f"{event['timestamp']}: {event['filename']}")
+# for event in video_events:
+#     print(f"{event['timestamp']}: {event['filename']}")
 
 
 # Combine and sort events by timestamp
