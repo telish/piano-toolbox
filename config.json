@@ -19,5 +19,9 @@
     },
     "simulate_recording.py": {
         "port_outgoing": 9876
+    },
+    "record_video.py": {
+        "camera_index": 2,
+        "show_image": false
     }
 }

@@ -21,33 +21,51 @@ osc_client = SimpleUDPClient("127.0.0.1", config["port_outgoing"])
 
 
 def parse_midi_mgs(filename):
+    """Parse MIDI messages from file. Returns empty list if file doesn't exist."""
     result = []
-    with open(filename, 'r') as file:
-        for line in file:
-            try:
-                timestamp, msg_text = line.strip().split(': ', 1)
-                timestamp = float(timestamp)  # Convert to float
-                # Convert text to mido Message
-                msg = mido.Message.from_str(msg_text)
-                result.append(
-                    {'timestamp': timestamp, 'type': 'midi', 'message': msg})
-            except ValueError as e:
-                print(f"Error parsing line: {line} -> {e}")
+    try:
+        with open(filename, 'r') as file:
+            for line in file:
+                try:
+                    timestamp, msg_text = line.strip().split(': ', 1)
+                    timestamp = float(timestamp)  # Convert to float
+                    # Convert text to mido Message
+                    msg = mido.Message.from_str(msg_text)
+                    result.append(
+                        {'timestamp': timestamp, 'type': 'midi', 'message': msg})
+                except ValueError as e:
+                    print(f"Error parsing line: {line} -> {e}")
+    except FileNotFoundError:
+        print(f"MIDI file not found: {filename}")
+        return []
+
     return result
 
 
+def parse_video_timestamps(timestamps_file):
+    """Parse the timestamps.json file created by record_video.py"""
+    with open(timestamps_file, 'r') as f:
+        timestamps = json.load(f)
+    return [{'timestamp': t['timestamp'],
+             'type': 'video',
+             'frame_number': t['frame_number']}
+            for t in timestamps]
+
+
 def parse_video(path):
-    video_frames = []
-    for filename in os.listdir(path):
-        if filename.startswith("frame_") and filename.endswith(".png"):
-            num_as_string = filename[6:-4].replace('_', '.')
-            try:
-                timestamp = float(num_as_string)
-                video_frames.append(
-                    {'timestamp': timestamp, 'type': 'video', 'filename': filename})
-            except ValueError as e:
-                print(f"Error parsing filename: {filename} -> {e}")
-    return video_frames
+    """Read video file and timestamps"""
+    # Read timestamps
+    timestamps_file = os.path.join(path, 'timestamps.json')
+    if not os.path.exists(timestamps_file):
+        raise FileNotFoundError(
+            f"Timestamps file not found: {timestamps_file}")
+
+    # Open video file
+    video_file = os.path.join(path, 'recording.avi')
+    if not os.path.exists(video_file):
+        raise FileNotFoundError(f"Video file not found: {video_file}")
+
+    return parse_video_timestamps(timestamps_file)
 
 
 def point_distance_to_quad(point, quad):
@@ -154,10 +172,18 @@ for event in all_events:
             if msg.note in current_notes:
                 current_notes.remove(msg.note)
     elif event['type'] == 'video':
-        print(f"{event['timestamp']}: {event['filename']}")
-        img_path = os.path.join(video_path, event['filename'])
-        img = cv2.imread(img_path)
-        if img is not None:
+        print(f"{event['timestamp']}: Frame {event['frame_number']}")
+
+        # Lazy loading of video file
+        if 'video_capture' not in locals():
+            video_file = os.path.join(video_path, 'recording.avi')
+            video_capture = cv2.VideoCapture(video_file)
+
+        # Seek to frame number and read frame
+        video_capture.set(cv2.CAP_PROP_POS_FRAMES, event['frame_number'])
+        ret, img = video_capture.read()
+
+        if ret:
             img, last_mp_result = track_hands.analyze_frame(img)
             for midi_pitch in current_notes:
                 img = draw_keys_3d.draw_key(img, midi_pitch)
@@ -165,4 +191,7 @@ for event in all_events:
             cv2.imshow('Simulate Recording', img)
             cv2.waitKey(1)
 
+# Clean up at the end
+if 'video_capture' in locals():
+    video_capture.release()
 cv2.destroyAllWindows()

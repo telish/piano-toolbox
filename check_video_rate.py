@@ -1,43 +1,38 @@
-
 import os
+import json
 import matplotlib.pyplot as plt
 
 
-def parse_video(path):
-    video_frames = []
-    for filename in os.listdir(path):
-        if filename.startswith("frame_") and filename.endswith(".png"):
-            num_as_string = filename[6:-4].replace('_', '.')
-            try:
-                timestamp = float(num_as_string)
-                video_frames.append(
-                    {'timestamp': timestamp, 'type': 'video', 'filename': filename})
-            except ValueError as e:
-                print(f"Error parsing filename: {filename} -> {e}")
-    return video_frames
+def parse_timestamps(json_path):
+    """
+    Liest die Timestamps aus der JSON-Datei.
+    """
+    with open(json_path, 'r') as f:
+        return json.load(f)
 
 
 def plot_inter_frame_intervals(data, bins=50):
     """
-    Calculates the inter-frame intervals (differences between adjacent timestamps)
-    and plots a histogram.
+    Berechnet die Zeitintervalle zwischen Frames und zeigt ein Histogramm.
 
     Args:
-        data (list of dict): List of dicts, each containing a "timestamp" key.
-        bins (int): Number of bins in the histogram (default: 50).
+        data (list of dict): Liste von Dicts mit "timestamp" Schlüssel
+        bins (int): Anzahl der Bins im Histogramm (default: 50)
     """
     timestamps = [d["timestamp"] for d in data]
     timestamps.sort()
 
     frame_rate = [1./(t2 - t1) for t1, t2 in zip(timestamps[:-1], timestamps[1:])]
 
+    plt.figure(figsize=(10, 6))
     plt.hist(frame_rate, bins=bins, edgecolor='black')
     plt.xlabel("Frame Rate (fps)")
-    plt.ylabel("Frequency")
-    plt.title("Histogram of Frame Rates")
+    plt.ylabel("Häufigkeit")
+    plt.title(f"Verteilung der Frame-Raten\n{len(frame_rate)} Frames")
+    plt.grid(True, alpha=0.3)
     plt.show()
 
 
-video_path = "recording/video"
-video_events = parse_video(video_path)
-plot_inter_frame_intervals(video_events)
+timestamps_path = "recording/video/timestamps.json"
+timestamps = parse_timestamps(timestamps_path)
+plot_inter_frame_intervals(timestamps)
