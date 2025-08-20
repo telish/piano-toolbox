@@ -4,11 +4,10 @@ import sys
 import os
 import time
 import json
+import utils
 
-# Load configuration
-with open('config.json', 'r') as file:
-    config = json.load(file)
-config = config[os.path.basename(__file__)]
+
+config = utils.get_config_for_file(__file__)
 
 # Create output directory
 output_dir = "recording/video"

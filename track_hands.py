@@ -1,8 +1,8 @@
 import cv2
 import mediapipe as mp
-import json
-
 from pythonosc import udp_client
+
+import utils
 
 MP_THUMB_TIP = 4
 MP_INDEX_FINGER_TIP = 8
@@ -86,9 +86,7 @@ def analyze_frame(frame):
     return frame, result
 
 
-with open('config.json', 'r') as file:
-    config = json.load(file)
-config = config['track_hands.py']
+config = utils.get_config_for_file(__file__)
 udp_client = udp_client.SimpleUDPClient("127.0.0.1", config["port_outgoing"])
 
 hands = mp.solutions.hands.Hands(

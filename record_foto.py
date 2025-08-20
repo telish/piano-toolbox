@@ -1,14 +1,13 @@
 import cv2
-import json
 import signal
 import sys
 import os
 import time
 
-# Load configuration
-with open('config.json', 'r') as file:
-    config = json.load(file)
-config = config[os.path.basename(__file__)]
+import utils
+
+
+config = utils.get_config_for_file(__file__)
 
 # Create output directory for frames
 output_dir = "recording/foto"
@@ -20,8 +19,8 @@ if not cap.isOpened():
     print("Error: Could not open webcam.")
     sys.exit(1)
 
-# Signal handler for graceful exit
-def signal_handler(sig, frame):
+
+def signal_handler(sig, frame):  # Signal handler for graceful exit
     print("\nExiting. Images saved in '{}'".format(output_dir))
     cap.release()
     cv2.destroyAllWindows()

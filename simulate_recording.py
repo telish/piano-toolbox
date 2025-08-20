@@ -14,9 +14,7 @@ import utils
 
 FAST_MODE = True  # No sleeping to speed up the simulation
 
-with open('config.json', 'r') as file:
-    config = json.load(file)
-config = config[os.path.basename(__file__)]
+config = utils.get_config_for_file(__file__)
 
 osc_client = SimpleUDPClient("127.0.0.1", config["port_outgoing"])
 

@@ -32,3 +32,10 @@ def flip_image(img):
     if flip_horizontal:
         img = cv2.flip(img, 1)
     return img
+
+
+def get_config_for_file(file_name):
+    file_name = os.path.basename(file_name)
+    with open('config.json', 'r') as file:
+        config = json.load(file)
+    return config[os.path.basename(file_name)]
