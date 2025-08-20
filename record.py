@@ -1,11 +1,18 @@
+import os
+import shutil
 import subprocess
 import signal
 import time
 
+
+# Delete 'recording' directory if it exists
+if os.path.exists("recording"):
+    shutil.rmtree("recording")
+
 # Start all programs
-record_video = subprocess.Popen(["python", "record-video.py"])
-record_midi = subprocess.Popen(["python", "record-midi.py"])
-record_audio = subprocess.Popen(["python", "record-audio.py"])
+record_video = subprocess.Popen(["python", "record_video.py"])
+record_midi = subprocess.Popen(["python", "record_midi.py"])
+record_audio = subprocess.Popen(["python", "record_audio.py"])
 
 
 def stop_processes(sig, frame):

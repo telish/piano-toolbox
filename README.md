@@ -24,7 +24,7 @@ Calibrates the camera using a 10x7 checkerboard image. Make several photos using
 
 # mark_keyboard.py
 
-Mark the edges of the keyboard to allow translation of MIDI notes to key coordinates in the image. The result will be written to `calibration/3d/keyboard_coords.txt`.
+Mark the edges of the keyboard to allow translation of MIDI notes to key coordinates in the image. Make a foto with `record_foto.py` and put it into the folder `calibration/keyboard`. The result will be written to `calibration/3d/keyboard_coords.txt`.
 
 
 

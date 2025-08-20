@@ -46,7 +46,7 @@ def draw_polygon(img, points):
 
 
 def calibrate_3d():
-    with open("calibration/3d/keyboard_coords.txt", "r") as file:
+    with open("calibration/keyboard/keyboard_coords.txt", "r") as file:
         points = [tuple(map(int, line.strip("()\n").split(", ")))
                   for line in file]
 

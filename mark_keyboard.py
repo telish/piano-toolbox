@@ -3,8 +3,9 @@ import os
 import cv2
 import numpy as np
 
-# Load image
-image_path = "recording/foto/frame_1739987266_919347.png"
+import utils
+
+image_path = utils.get_keyboard_image_path()
 image = cv2.imread(image_path)
 
 if image is None:
@@ -36,7 +37,7 @@ def mouse_callback(event, x, y, flags, param):
 def save_coords(points):
     print("saving", len(points))
     if len(points) == 4:
-        output_dir = "calibration/3d/"
+        output_dir = "calibration/keyboard/"
         os.makedirs(output_dir, exist_ok=True)
         with open(os.path.join(output_dir, "keyboard_coords.txt"), "w") as f:
             for p in points:

@@ -1,7 +1,9 @@
 import cv2
 import numpy as np
 
-with open("calibration/3d/keyboard_coords.txt", "r") as file:
+import utils
+
+with open("calibration/keyboard/keyboard_coords.txt", "r") as file:
     points = [tuple(map(int, line.strip("()\n").split(", "))) for line in file]
 
 
@@ -35,7 +37,7 @@ def compute_homography():
 H = compute_homography()
 H_inv = np.linalg.inv(H)
 
-image_path = "frame_1739981121_285714.png"
+image_path = utils.get_keyboard_image_path()
 image = cv2.imread(image_path)
 
 if image is None:

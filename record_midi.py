@@ -19,17 +19,18 @@ output_dir = "recording/midi"
 os.makedirs(output_dir, exist_ok=True)
 
 # Open MIDI input
-with mido.open_input(midi_port_name) as inport:
-    print("record-midi.py: Recording. Press Ctrl+C to stop.")
-    filename = os.path.join(output_dir, "midi_msg.txt")
-    with open(filename, "w") as file:
-        try:
-            while True:
-                for msg in inport.iter_pending():
-                    timestamp = time.time()
-                    if msg.type in ['note_off', 'note_on', 'control_change']:
-                        log_entry = f"{timestamp}: {msg}\n"
-                        file.write(log_entry)
-                        print(log_entry.strip())
-        except KeyboardInterrupt:
-            print("record-midi.py: Stopped.")
+try:
+    with mido.open_input(midi_port_name) as inport:
+        print("record-midi.py: Recording. Press Ctrl+C to stop.")
+        filename = os.path.join(output_dir, "midi_msg.txt")
+        with open(filename, "w") as file:
+
+                while True:
+                    for msg in inport.iter_pending():
+                        timestamp = time.time()
+                        if msg.type in ['note_off', 'note_on', 'control_change']:
+                            log_entry = f"{timestamp:.7f}: {msg}\n"
+                            file.write(log_entry)
+                            print(log_entry.strip())
+except KeyboardInterrupt:
+    print("record-midi.py: Stopped.")

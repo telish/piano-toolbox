@@ -128,11 +128,13 @@ def closest_hand_and_finger(midi_pitch, mp_result):
     return result_hand, result_finger
 
 
-midi_events = parse_midi_mgs("recording/midi/midi_msg.txt")
+recording_base = config["path"]
+
+midi_events = parse_midi_mgs(os.path.join(recording_base, "midi/midi_msg.txt"))
 # for event in midi_events:
 #     print(f"{event['timestamp']}: {event['message']}")
 
-video_path = "recording/video"
+video_path = os.path.join(recording_base, "video")
 video_events = parse_video(video_path)
 # for event in video_events:
 #     print(f"{event['timestamp']}: {event['filename']}")

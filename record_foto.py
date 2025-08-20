@@ -1,15 +1,21 @@
 import cv2
+import json
 import signal
 import sys
 import os
 import time
+
+# Load configuration
+with open('config.json', 'r') as file:
+    config = json.load(file)
+config = config[os.path.basename(__file__)]
 
 # Create output directory for frames
 output_dir = "recording/foto"
 os.makedirs(output_dir, exist_ok=True)
 
 # Open the webcam
-cap = cv2.VideoCapture(1)
+cap = cv2.VideoCapture(config.get("camera_index", 0))
 if not cap.isOpened():
     print("Error: Could not open webcam.")
     sys.exit(1)
