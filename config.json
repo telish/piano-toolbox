@@ -2,21 +2,6 @@
     "track_hands.py": {
         "port_outgoing": 9999
     },
-    "hand_mapper_camera.py": {
-        "port_incoming_hands": 9876,
-        "port_incoming_midi": 9877,
-        "source": [
-            {
-                "name": "live",
-                "VideoCapture_index": 0,
-                "midi_port_index": 0
-            },
-            {
-                "name": "file",
-                "path": "./recording"
-            }
-        ]
-    },
     "simulate_recording.py": {
         "port_outgoing": 9876,
         "path": "./recording_jazz2"
