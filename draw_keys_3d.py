@@ -1,7 +1,7 @@
 import cv2
 import numpy as np
 import json
-
+import utils
 
 # Keyboard 3-D coordinates
 W = 122  # Keyboard width is 122 cm
@@ -153,8 +153,9 @@ mtx, dist, rvec, tvec, R = calibrate_3d()
 
 
 def main():
-    image_path = "frame_1739981121_285714.png"
+    image_path = utils.get_keyboard_image_path()
     img = cv2.imread(image_path)
+    img = utils.flip_image(img)
 
     for midi_pitch in range(21, 109):
         outline = key_coords_3d(midi_pitch)

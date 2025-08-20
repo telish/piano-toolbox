@@ -3,6 +3,8 @@ import numpy as np
 import glob
 import json
 
+import utils
+
 # Anpassen: Anzahl der inneren Ecken pro Zeile/Spalte (z. B. 7x6)
 CHECKERBOARD = (10, 7)
 
@@ -21,6 +23,7 @@ gray_shape = None
 
 for fname in images:
     img = cv2.imread(fname)
+    img = utils.flip_image(img)
     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     gray_shape = gray.shape[::-1]
 

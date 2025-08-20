@@ -53,6 +53,7 @@ def main():
 
     while True:
         img_copy = image.copy()
+        img_copy = utils.flip_image(img_copy)
         draw_trapezoid(img_copy, points)
         cv2.imshow("Draw Keyboard", img_copy)
 

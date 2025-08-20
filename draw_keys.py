@@ -105,6 +105,7 @@ def main():
 
     while True:
         img_copy = image.copy()
+        img_copy = utils.flip_image(img_copy)
         draw_trapezoid(img_copy)
         for white_key in range(52):
             draw_white_key(img_copy, white_key)

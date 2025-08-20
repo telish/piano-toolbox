@@ -10,6 +10,7 @@ from shapely.geometry import Point, Polygon
 
 import track_hands
 import draw_keys_3d
+import utils
 
 FAST_MODE = True  # No sleeping to speed up the simulation
 
@@ -184,6 +185,7 @@ for event in all_events:
         # Seek to frame number and read frame
         video_capture.set(cv2.CAP_PROP_POS_FRAMES, event['frame_number'])
         ret, img = video_capture.read()
+        img = utils.flip_image(img)
 
         if ret:
             img, last_mp_result = track_hands.analyze_frame(img)
