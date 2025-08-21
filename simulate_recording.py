@@ -69,12 +69,9 @@ midi_events = parse_midi_mgs(os.path.join(recording_base, "midi/midi_msg.txt"))
 video_path = os.path.join(recording_base, "video")
 video_events = parse_video(video_path)
 
-
 # Combine and sort events by timestamp
 all_events = midi_events + video_events
 all_events.sort(key=lambda event: event['timestamp'])
-
-
 start_real = time.time()
 start_recording = all_events[0]['timestamp']
 
@@ -113,9 +110,18 @@ for event in all_events:
 
         img = utils.flip_image(img)
         analysis_hub.process_frame(img)
-        for midi_pitch in analysis_hub.current_notes:
+        img = analysis_hub.last_mp_image
+        for midi_pitch in analysis_hub.current_notes.keys():
+            if analysis_hub.current_notes[midi_pitch]["hand"] == "left":
+                color = (0, 0, 200)  # Red color
+            elif analysis_hub.current_notes[midi_pitch]["hand"] == "right":
+                color = (0, 200, 0)  # Green color
+            else:
+                color = (200, 200, 0)  # Yellow for unknown hand
+
+            annotation = f"{analysis_hub.current_notes[midi_pitch]['finger']}"
             img = draw_keys_3d.draw_key(
-                analysis_hub.last_mp_image, midi_pitch)
+                img, midi_pitch, color, annotation)
 
         cv2.imshow('Simulate Recording', img)
         cv2.waitKey(1)

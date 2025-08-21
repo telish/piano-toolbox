@@ -38,11 +38,11 @@ def sort_points(points):
     return top_left, top_right, bottom_left, bottom_right
 
 
-def draw_polygon(img, points):
+def draw_polygon(img, points, color):
     img_points = np.int32(points)
     img_points = img_points.reshape((-1, 1, 2))
     cv2.polylines(img, [img_points], isClosed=True,
-                  color=(0, 255, 0), thickness=2)
+                  color=color, thickness=2)
 
 
 def calibrate_3d():
@@ -143,10 +143,28 @@ def pixel_coordinates_of_key(midi_pitch):
     return image_points
 
 
-def draw_key(img, midi_pitch):
+def draw_key(img, midi_pitch, color, annotation=''):
     image_points = pixel_coordinates_of_key(midi_pitch)
-    draw_polygon(img, image_points)
+    draw_polygon(img, image_points, color)
+    draw_anotation(img, midi_pitch, color, annotation, image_points)
     return img
+
+
+def draw_anotation(img, midi_pitch, color, annotation, image_points):
+    if annotation:
+        if midi_pitch in black_keys:
+            y_offset = 30
+        else:
+            y_offset = 10
+
+        (text_width, text_height), baseline = cv2.getTextSize(
+            annotation, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1
+        )
+        x = (image_points[0][0][0] + image_points[3]
+             [0][0]) / 2 - text_width / 2
+        y = int(image_points[0][0][1]) - y_offset
+        cv2.putText(img, annotation, (int(x), y),
+                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
 
 mtx, dist, rvec, tvec, R = calibrate_3d()
@@ -158,10 +176,11 @@ def main():
     img = utils.flip_image(img)
 
     for midi_pitch in range(21, 109):
-        outline = key_coords_3d(midi_pitch)
-        if outline is not None:
-            image_points, _ = cv2.projectPoints(outline, rvec, tvec, mtx, dist)
-            draw_polygon(img, image_points)
+        # outline = key_coords_3d(midi_pitch)
+        # if outline is not None:
+        #     image_points, _ = cv2.projectPoints(outline, rvec, tvec, mtx, dist)
+        #     draw_polygon(img, image_points, color=(0, 255, 0))
+        draw_key(img, midi_pitch, (0, 255, 0), f'{midi_pitch}')
 
     cv2.imshow("Draw Keyboard", img)
     cv2.waitKey(0)

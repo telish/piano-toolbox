@@ -66,27 +66,28 @@ def closest_hand_and_finger(midi_pitch, mp_result):
     return result_hand, result_finger
 
 
-current_notes = []
 last_midi_result = None
+current_notes = {}
 
 
 def process_midi_event(event):
     global current_notes, last_midi_result
     msg = event['message']
     if msg.type == 'note_on' and msg.velocity > 0:
-        current_notes.append(msg.note)
         hand, finger = closest_hand_and_finger(msg.note, last_mp_result)
-        last_midi_result = {
-            "msg.type": "note_on",
-            "note": msg.note,
+        note_properties = {
             "velocity": msg.velocity,
             "hand": hand,
             "finger": finger
         }
+        current_notes[msg.note] = note_properties
+        last_midi_result = dict(note_properties)
+        last_midi_result["msg.type"] = "note_on"
+        last_midi_result["note"] = msg.note
         osc_sender.send_message(f"/{hand}/note_on", msg.note, msg.velocity)
     elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
         if msg.note in current_notes:
-            current_notes.remove(msg.note)
+            del current_notes[msg.note]
         last_midi_result = {
             "msg.type": "note_off",
             "note": msg.note,
