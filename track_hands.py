@@ -1,8 +1,8 @@
 import cv2
 import mediapipe as mp
-from pythonosc import udp_client
 
 import utils
+import osc_sender
 
 MP_THUMB_TIP = 4
 MP_INDEX_FINGER_TIP = 8
@@ -38,7 +38,7 @@ def analyze_frame(frame):
                 label = "right"
             elif label.lower() == "right":
                 label = "left"
-            udp_client.send_message(f"/{label}/visible", 1)
+            osc_sender.send_message(f"/{label}/visible", 1)
 
             x_coords = [landmark.x for landmark in hand_landmarks.landmark]
             y_coords = [landmark.y for landmark in hand_landmarks.landmark]
@@ -76,18 +76,15 @@ def analyze_frame(frame):
                         color=(255, 255, 255), thickness=2)
                 )
 
-            udp_client.send_message(f"/{label}/landmarks", flat_coords)
+            osc_sender.send_message(f"/{label}/landmarks", *flat_coords)
 
     if not result["left_visible"]:
-        udp_client.send_message(f"/left/visible", 0)
+        osc_sender.send_message(f"/left/visible", 0)
     if not result["right_visible"]:
-        udp_client.send_message(f"/right/visible", 0)
+        osc_sender.send_message(f"/right/visible", 0)
 
     return frame, result
 
-
-config = utils.get_config_for_file(__file__)
-udp_client = udp_client.SimpleUDPClient("127.0.0.1", config["port_outgoing"])
 
 hands = mp.solutions.hands.Hands(
     min_detection_confidence=0.7, min_tracking_confidence=0.5)

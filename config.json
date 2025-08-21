@@ -1,7 +1,4 @@
 {
-    "track_hands.py": {
-        "port_outgoing": 9999
-    },
     "simulate_recording.py": {
         "port_outgoing": 9876,
         "path": "./recording_jazz2"
