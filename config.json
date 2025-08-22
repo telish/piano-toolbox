@@ -1,7 +1,8 @@
 {
     "simulate_recording.py": {
         "port_outgoing": 9876,
-        "path": "./recording_jazz2"
+        "path": "./recording_jazz2",
+        "interactive_mode": true
     },
     "record_video.py": {
         "camera_index": 0,
