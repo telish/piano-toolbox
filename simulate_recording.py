@@ -5,7 +5,7 @@ import time
 import cv2
 import mido
 
-import analysis_hub
+from analysis_hub import hub
 import draw_keys_3d
 import utils
 import osc_sender
@@ -134,9 +134,9 @@ skip_to_next_note = {'active': False, 'note_received': False}
 def process_midi(event):
     global skip_to_next_note
     print(f"{event['timestamp']}: {event['message']}")
-    analysis_hub.process_midi_event(event)
-    res = analysis_hub.last_midi_result
-    if analysis_hub.last_midi_result["msg.type"] == "note_on":
+    hub.process_midi_event(event)
+    res = hub.last_midi_result
+    if hub.last_midi_result["msg.type"] == "note_on":
         print(res['hand'].capitalize(), res['finger'])
         if skip_to_next_note['active']:
             skip_to_next_note['note_received'] = True
@@ -170,19 +170,19 @@ def process_video_frame(event, video_processor):
 
     # Process frame
     img = utils.flip_image(img)
-    analysis_hub.process_frame(img)
-    img = analysis_hub.last_mp_image
+    hub.process_frame(img)
+    img = hub.last_image_output
 
     # Draw notes
-    for midi_pitch in analysis_hub.current_notes.keys():
-        if analysis_hub.current_notes[midi_pitch]["hand"] == "left":
+    for midi_pitch in hub.current_notes.keys():
+        if hub.current_notes[midi_pitch]["hand"] == "left":
             color = (0, 0, 200)  # Red color
-        elif analysis_hub.current_notes[midi_pitch]["hand"] == "right":
+        elif hub.current_notes[midi_pitch]["hand"] == "right":
             color = (0, 200, 0)  # Green color
         else:
             color = (200, 200, 0)  # Yellow for unknown hand
 
-        annotation = f"{analysis_hub.current_notes[midi_pitch]['finger']}"
+        annotation = f"{hub.current_notes[midi_pitch]['finger']}"
         img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
 
     cv2.imshow('Simulate Recording', img)

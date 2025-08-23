@@ -2,20 +2,15 @@ import cv2
 import numpy as np
 import json
 import utils
+import keyboard_geometry
 
-# Keyboard 3-D coordinates
-W = 122  # Keyboard width is 122 cm
-NUM_WHITE_KEYS = 52
-WHITE_KEY_WIDTH = W / NUM_WHITE_KEYS
-BLACK_KEY_WIDTH = 0.95  # 0.95 cm
-BLACK_KEY_HEIGHT = 9  # 9 cm
-WHITE_KEY_HEIGTH = 15
 
 keyboard = np.array([
     [0,  0,  0],  # top left
-    [W,  0,  0],  # top right
-    [W,  WHITE_KEY_HEIGTH,  0],  # bottom right
-    [0,  WHITE_KEY_HEIGTH,  0]   # bottom left
+    [keyboard_geometry.KEYBOARD_WIDTH,  0,  0],  # top right
+    [keyboard_geometry.KEYBOARD_WIDTH,
+        keyboard_geometry.WHITE_HEIGHT,  0],  # bottom right
+    [0,  keyboard_geometry.WHITE_HEIGHT,  0]   # bottom left
 ], dtype=np.float32)
 
 
@@ -42,7 +37,7 @@ def draw_polygon(img, points, color):
     img_points = np.int32(points)
     img_points = img_points.reshape((-1, 1, 2))
     cv2.polylines(img, [img_points], isClosed=True,
-                  color=color, thickness=2)
+                  color=color, thickness=1)
 
 
 def calibrate_3d():
@@ -76,64 +71,17 @@ def calibrate_3d():
     return mtx, dist, rvec, tvec, R
 
 
-def white_key_coords_3d(white_key_index):
-    """Returns the 3D coordinates of a white key given its index. The unit is cm. 
-    The z-axis is always 0. (0, 0, 0) is the bottom left corner of the lowest key."""
-    x_left = white_key_index * WHITE_KEY_WIDTH
-    x_right = x_left + WHITE_KEY_WIDTH
-    return np.array([
-        [x_left, 0, 0],
-        [x_left, WHITE_KEY_HEIGTH, 0],
-        [x_right, WHITE_KEY_HEIGTH, 0],
-        [x_right, 0, 0]
-    ], dtype=np.float32)
-
-
-white_keys = [
-    21, 23, 24, 26, 28, 29, 31,  # lowest octave
-    33, 35, 36, 38, 40, 41, 43,  # second octave
-    45, 47, 48, 50, 52, 53, 55,  # third octave
-    57, 59, 60, 62, 64, 65, 67,  # fourth octave
-    69, 71, 72, 74, 76, 77, 79,  # fifth octave
-    81, 83, 84, 86, 88, 89, 91,  # sixth octave
-    93, 95, 96, 98, 100, 101, 103,  # seventh octave
-    105, 107, 108  # highest octave
-]
-black_keys = [key for key in range(21, 108) if key not in white_keys]
-
-
-def pitch_class(midi_pitch):
-    c = midi_pitch % 12
-    pitch_clases = ['C', 'C#', 'D', 'D#', 'E',
-                    'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
-    return pitch_clases[c]
-
-
-def black_key_coords_3d(midi_pitch):
-    white_below_index = white_keys.index(midi_pitch - 1)
-    white_outline = white_key_coords_3d(white_below_index)
-    white_x_right = white_outline[2][0]
-    black_x_left = white_x_right - BLACK_KEY_WIDTH / 2
-    if pitch_class(midi_pitch) in ['C#', 'F#']:
-        black_x_left -= BLACK_KEY_WIDTH / 3
-    if pitch_class(midi_pitch) in ['D#', 'A#']:
-        black_x_left += BLACK_KEY_WIDTH / 3
-    black_x_right = black_x_left + BLACK_KEY_WIDTH
-    return np.array([
-        [black_x_left, 0, 0],
-        [black_x_left, BLACK_KEY_HEIGHT, 0],
-        [black_x_right, BLACK_KEY_HEIGHT, 0],
-        [black_x_right, 0, 0]
-    ], dtype=np.float32)
-
-
 def key_coords_3d(midi_pitch):
-    if midi_pitch in white_keys:
-        return white_key_coords_3d(white_keys.index(midi_pitch))
-    elif midi_pitch in black_keys:
-        return black_key_coords_3d(midi_pitch)
-    else:
-        raise ValueError(f"Invalid MIDI pitch: {midi_pitch}")
+    """Converts keyboard_geometry points to 3D coordinates array."""
+    points = keyboard_geometry.key_points(midi_pitch)
+
+    # Convert to the required format: each point as [x, y, 0]
+    # Adding z=0 as the third coordinate
+    coords_3d = []
+    for point in points:
+        coords_3d.append([point[0], point[1], 0])
+
+    return np.array(coords_3d, dtype=np.float32)
 
 
 def pixel_coordinates_of_key(midi_pitch):
@@ -152,7 +100,7 @@ def draw_key(img, midi_pitch, color, annotation=''):
 
 def draw_anotation(img, midi_pitch, color, annotation, image_points):
     if annotation:
-        if midi_pitch in black_keys:
+        if midi_pitch in keyboard_geometry.black_keys:
             y_offset = 30
         else:
             y_offset = 10
@@ -160,9 +108,16 @@ def draw_anotation(img, midi_pitch, color, annotation, image_points):
         (text_width, text_height), baseline = cv2.getTextSize(
             annotation, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1
         )
-        x = (image_points[0][0][0] + image_points[3]
-             [0][0]) / 2 - text_width / 2
+
+        # Finde minimalen und maximalen x-Wert
+        x_values = [point[0][0] for point in image_points]
+        x_min = min(x_values)
+        x_max = max(x_values)
+
+        # Berechne Mittelpunkt
+        x = (x_min + x_max) / 2 - text_width / 2
         y = int(image_points[0][0][1]) - y_offset
+
         cv2.putText(img, annotation, (int(x), y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
