@@ -1,5 +1,7 @@
 import utils
 
+# Based on: https://upload.wikimedia.org/wikipedia/commons/4/48/Pianoteilung.svg
+# Article: https://de.wikipedia.org/wiki/Klaviatur
 
 BLACK_HEIGHT = 100.  # in mm
 WHITE_EXTRA_HEIGHT = 45.
