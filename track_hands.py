@@ -10,16 +10,24 @@ MP_MIDDLE_FINGER_TIP = 12
 MP_RING_FINGER_TIP = 16
 MP_PINKY_TIP = 20
 
+finger_to_tip_index = {
+    1: MP_THUMB_TIP,
+    2: MP_INDEX_FINGER_TIP,
+    3: MP_MIDDLE_FINGER_TIP,
+    4: MP_RING_FINGER_TIP,
+    5: MP_PINKY_TIP
+}
+
 # This is set to actual values once analyze_frame is first called
 image_height_px, image_width_px = 0, 0
 
 
-def analyze_frame(frame):
+def analyze_frame(img_input, img_output=None):
     global image_height_px, image_width_px
-    image_height_px, image_width_px, _ = frame.shape
+    image_height_px, image_width_px, _ = img_input.shape
 
     # Convert the frame to RGB (MediaPipe expects RGB images)
-    rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+    rgb_frame = cv2.cvtColor(img_input, cv2.COLOR_BGR2RGB)
 
     # Process the frame and get results
     mp_results = hands.process(rgb_frame)
@@ -61,7 +69,7 @@ def analyze_frame(frame):
 
             if label == "left":
                 mp.solutions.drawing_utils.draw_landmarks(
-                    frame, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
+                    img_output, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
                     mp.solutions.drawing_utils.DrawingSpec(
                         color=(0, 0, 200), thickness=2, circle_radius=2),
                     mp.solutions.drawing_utils.DrawingSpec(
@@ -69,7 +77,7 @@ def analyze_frame(frame):
                 )
             elif label == "right":
                 mp.solutions.drawing_utils.draw_landmarks(
-                    frame, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
+                    img_output, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
                     mp.solutions.drawing_utils.DrawingSpec(
                         color=(0, 200, 0), thickness=2, circle_radius=2),
                     mp.solutions.drawing_utils.DrawingSpec(
@@ -83,7 +91,7 @@ def analyze_frame(frame):
     if not result["right_visible"]:
         osc_sender.send_message(f"/right/visible", 0)
 
-    return frame, result
+    return result
 
 
 hands = mp.solutions.hands.Hands(

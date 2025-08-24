@@ -4,6 +4,7 @@ from shapely.geometry import Point, Polygon
 import track_hands
 import draw_keys_3d
 import osc_sender
+import tip_on_key
 
 
 def _point_distance_to_quad(point, quad):
@@ -97,8 +98,12 @@ class AnalysisHub:
             }
 
     def process_frame(self, img):
-        self.last_image_output, self.last_mp_result = track_hands.analyze_frame(
-            img)
+        self.last_image_output = img.copy()
+        self.last_mp_result = track_hands.analyze_frame(
+            img_input=img, img_output=self.last_image_output)
+        for pitch in self.current_notes.keys():
+            tip_on_key.find_tip_on_key(
+                pitch, self.current_notes[pitch], self.last_mp_result, img_output=self.last_image_output)
 
 
 hub = AnalysisHub()

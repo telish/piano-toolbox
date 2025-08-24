@@ -61,7 +61,7 @@ def calibrate_3d():
     mtx = np.array(data["camera_matrix"])
     dist = np.array(data["distortion_coefficients"])
 
-    # PnP-Schätzung durchführen (RANSAC für robustere Lösung)
+    # Perform PnP estimation (RANSAC for more robust solution)
     success, rvec, tvec = cv2.solvePnP(
         keyboard, image_points, mtx, dist, flags=cv2.SOLVEPNP_ITERATIVE
     )
@@ -71,12 +71,10 @@ def calibrate_3d():
     return mtx, dist, rvec, tvec, R
 
 
-def key_coords_3d(midi_pitch):
-    """Converts keyboard_geometry points to 3D coordinates array."""
-    points = keyboard_geometry.key_points(midi_pitch)
+def make_3d(points):
+    """Converts keyboard_geometry points to 3D coordinates array by adding a 0 z-coordinate."""
+    # points = keyboard_geometry.key_points(midi_pitch)
 
-    # Convert to the required format: each point as [x, y, 0]
-    # Adding z=0 as the third coordinate
     coords_3d = []
     for point in points:
         coords_3d.append([point[0], point[1], 0])
@@ -86,7 +84,16 @@ def key_coords_3d(midi_pitch):
 
 def pixel_coordinates_of_key(midi_pitch):
     """Projects the 3D coordinates of a key onto the 2D image plane to get the pixel coordinates."""
-    outline = key_coords_3d(midi_pitch)
+    points = keyboard_geometry.key_points(midi_pitch)
+    outline = make_3d(points)
+    image_points, _ = cv2.projectPoints(outline, rvec, tvec, mtx, dist)
+    return image_points
+
+
+def pixel_coordinates_of_bounding_box(midi_pitch):
+    """Projects the 3D coordinates of a key's bounding box onto the 2D image plane to get the pixel coordinates."""
+    points = keyboard_geometry.key_bounding_box(midi_pitch)
+    outline = make_3d(points)
     image_points, _ = cv2.projectPoints(outline, rvec, tvec, mtx, dist)
     return image_points
 
@@ -109,12 +116,12 @@ def draw_anotation(img, midi_pitch, color, annotation, image_points):
             annotation, cv2.FONT_HERSHEY_SIMPLEX, 0.5, 1
         )
 
-        # Finde minimalen und maximalen x-Wert
+        # Find minimum and maximum x-value
         x_values = [point[0][0] for point in image_points]
         x_min = min(x_values)
         x_max = max(x_values)
 
-        # Berechne Mittelpunkt
+        # Calculate midpoint
         x = (x_min + x_max) / 2 - text_width / 2
         y = int(image_points[0][0][1]) - y_offset
 

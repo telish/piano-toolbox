@@ -141,6 +141,21 @@ def key_points(midi_pitch):
         ]
 
 
+def key_bounding_box(midi_pitch):
+    if midi_pitch not in white_keys:
+        return key_points(midi_pitch)
+    else:
+        idx = white_keys.index(midi_pitch)
+        left = idx * WHITE_BOTTOM_WIDTH
+        right = left + WHITE_BOTTOM_WIDTH
+        return [
+            [left, 0],  # top-left
+            [left, WHITE_HEIGHT],  # bottom-left
+            [right, WHITE_HEIGHT],  # bottom-right
+            [right, 0]  # top-right
+        ]
+
+
 if __name__ == "__main__":
     import cv2
     import numpy as np
@@ -153,10 +168,22 @@ if __name__ == "__main__":
 
     # Draw keys and labels
     for i, pitch in enumerate(range(21, 109)):
-        pts = np.array([key_points(pitch)], dtype=np.int32)
-        cv2.polylines(img, pts, isClosed=True, color=(0, 255, 0), thickness=1)
+        # Get points and add y-offset
+        key_pts = np.array([key_points(pitch)], dtype=np.int32)
+
+        cv2.polylines(img, key_pts, isClosed=True,
+                      color=(0, 200, 0), thickness=2)
+
+        # Also shift text
         cv2.putText(img, f'{pitch}', (int(left_at_top[i] + 1), 15),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+
+        # Also shift bounding box
+        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32)
+        box_pts[0, :, 1] += int(WHITE_HEIGHT + 2)
+
+        cv2.polylines(img, box_pts, isClosed=True,
+                      color=(200, 0, 0), thickness=2)
 
     cv2.imshow("Keyboard Geometry", img)
     cv2.waitKey(0)
