@@ -5,32 +5,49 @@ import utils
 import keyboard_geometry
 
 
-keyboard = np.array([
-    [0,  0,  0],  # top left
-    [keyboard_geometry.KEYBOARD_WIDTH,  0,  0],  # top right
-    [keyboard_geometry.KEYBOARD_WIDTH,
-        keyboard_geometry.WHITE_HEIGHT,  0],  # bottom right
-    [0,  keyboard_geometry.WHITE_HEIGHT,  0]   # bottom left
-], dtype=np.float32)
+# Global variables for camera calibration
+mtx = None
+dist = None
+rvec = None
+tvec = None
+R = None
 
 
-def sort_points(points):
-    sorted_by_y = sorted(points, key=lambda p: p[1])
-    # Two points with the smallest Y (higher line)
-    top_points = sorted_by_y[:2]
-    bottom_points = sorted_by_y[2:]
+def init(correspondences=None):
+    """
+    Initialize global calibration variables by performing 3D calibration. If no correspondences are provided, it will load them from a file.
 
-    # Sort top points by x-coordinate
-    top_points_sorted = sorted(top_points, key=lambda p: p[0])
-    top_left = top_points_sorted[0]
-    top_right = top_points_sorted[1]
+    Args:
+        correspondences (list): A list of dictionaries containing "pixel" and "object" keypoints.
+    """
+    if correspondences is None:
+        with open("calibration/keyboard/keyboard_coords.json", "r") as file:
+            correspondences = json.load(file)
+            object_points = []
+            image_points = []
+            for c in correspondences:
+                object_coords = c["object"]
+                pixel_coords = c["pixel"]
+                object_points.append(object_coords)
+                image_points.append(pixel_coords)
 
-    # Sort bottom points by x-coordinate
-    bottom_points_sorted = sorted(bottom_points, key=lambda p: p[0])
-    bottom_left = bottom_points_sorted[0]
-    bottom_right = bottom_points_sorted[1]
+    # pixel coordinates
+    image_points = np.array([image_points], dtype=np.float32)
+    object_points = np.array([object_points], dtype=np.float32)
 
-    return top_left, top_right, bottom_left, bottom_right
+    with open("calibration/checkerboard/camera_params.json", "r") as f:
+        correspondences = json.load(f)
+        mtx = np.array(correspondences["camera_matrix"])
+        dist = np.array(correspondences["distortion_coefficients"])
+
+    # Perform PnP estimation (RANSAC for more robust solution)
+    success, rvec, tvec = cv2.solvePnP(
+        object_points, image_points, mtx, dist, flags=cv2.SOLVEPNP_ITERATIVE
+    )
+
+    R, _ = cv2.Rodrigues(rvec)
+
+    return mtx, dist, rvec, tvec, R
 
 
 def draw_polygon(img, points, color):
