@@ -8,9 +8,10 @@ import utils
 # Anpassen: Anzahl der inneren Ecken pro Zeile/Spalte (z. B. 7x6)
 CHECKERBOARD = (10, 7)
 
-# 3D-Punkte: Schachbrett liegt in der XY-Ebene (Z = 0)
+square_size_mm = 25.0  # Passe an die tatsächliche Größe an
 objp = np.zeros((CHECKERBOARD[0] * CHECKERBOARD[1], 3), np.float32)
-objp[:, :2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
+objp[:, :2] = np.mgrid[0:CHECKERBOARD[0],
+                       0:CHECKERBOARD[1]].T.reshape(-1, 2) * square_size_mm
 
 # Listen für Kalibrierung
 objpoints = []  # 3D Punkte in realer Welt
@@ -43,7 +44,8 @@ if gray_shape is None:
     print("No images in calibration/checkerboard")
     exit(-1)
 
-ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(objpoints, imgpoints, gray_shape, None, None)
+ret, mtx, dist, rvecs, tvecs = cv2.calibrateCamera(
+    objpoints, imgpoints, gray_shape, None, None)
 
 # Ergebnisse speichern
 camera_params = {
@@ -54,3 +56,10 @@ camera_params = {
 with open("calibration/checkerboard/camera_params.json", "w") as f:
     json.dump(camera_params, f, indent=4)
 
+mean_error = 0
+for i in range(len(objpoints)):
+    imgpoints2, _ = cv2.projectPoints(
+        objpoints[i], rvecs[i], tvecs[i], mtx, dist)
+    error = cv2.norm(imgpoints[i], imgpoints2, cv2.NORM_L2)/len(imgpoints2)
+    mean_error += error
+print(f"Total error: {mean_error/len(objpoints)}")

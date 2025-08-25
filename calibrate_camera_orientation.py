@@ -22,13 +22,16 @@ def save_orientation():
     os.makedirs(output_dir, exist_ok=True)
     with open(os.path.join(output_dir, "camera_orientation.json"), "w") as f:
         json.dump({"flip_horizontal": flip_horizontal,
-                    "flip_vertical": flip_vertical}, f)
+                   "flip_vertical": flip_vertical}, f)
 
 
 def main():
     global flip_horizontal, flip_vertical
-    print("Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 'q' to save and quit.")
-    print("The keyboard should be located at the top of the image. Left hand on the left side of the image and vice versa for the right.")
+
+    # Example with long text that will be automatically wrapped plus a manual line break
+    text = "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 'q' to save and quit. " \
+        "Desired result: (1) The keyboard appears at the top of the image. " \
+        "(2) The left hand appears on the left side of the image, the right hand on the right."
 
     cv2.namedWindow("Keyboard View")
 
@@ -38,11 +41,15 @@ def main():
             img_copy = cv2.flip(img_copy, 1)
         if flip_vertical:
             img_copy = cv2.flip(img_copy, 0)
+
+        # Add text to the image using the enhanced function
+        img_copy = utils.add_text_to_image(img_copy, text)
+
         cv2.imshow("Keyboard View", img_copy)
 
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord('q'):  # Reset
+        if key == ord('q'):
             save_orientation()
             break
         elif key == ord('h'):

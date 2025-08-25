@@ -37,7 +37,35 @@ while True:
         print("Error: Failed to capture frame.")
         break
 
-    cv2.imshow('Camera', frame)
+    frame_output = frame.copy()
+
+    # Add text to the image
+    text = "Press any key to capture an image. Press 'q' to quit."
+    font = cv2.FONT_HERSHEY_SIMPLEX
+    font_scale = 0.7
+    thickness = 2
+    color = (255, 255, 255)  # White text
+
+    # Get text size to position it and create background
+    (text_width, text_height), baseline = cv2.getTextSize(
+        text, font, font_scale, thickness)
+
+    # Position at the bottom of the frame
+    text_x = 10
+    text_y = frame_output.shape[0] - 20
+
+    # Draw dark background rectangle for better readability
+    cv2.rectangle(frame_output,
+                  (text_x - 5, text_y - text_height - 5),
+                  (text_x + text_width + 5, text_y + 5),
+                  (0, 0, 0), -1)
+
+    # Draw text
+
+    cv2.putText(frame_output, text, (text_x, text_y), font,
+                font_scale, color, thickness, cv2.LINE_AA)
+
+    cv2.imshow('Camera', frame_output)
     key = cv2.waitKey(1) & 0xFF  # Wait for key press
 
     if key == ord('q'):

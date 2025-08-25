@@ -6,7 +6,7 @@
     },
     "record_video.py": {
         "camera_index": 0,
-        "show_image": false
+        "show_image": true
     },
     "record_foto.py": {
         "camera_index": 0
