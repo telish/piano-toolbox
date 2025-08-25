@@ -101,10 +101,12 @@ def save_coords():
         output_dir = "calibration/keyboard/"
         os.makedirs(output_dir, exist_ok=True)
         add_object_coords(user_defined_points)
+        result = {"keypoint_mappings": user_defined_points,
+                  "black_height": keyboard_geometry.black_height}
 
-        with open(os.path.join(output_dir, "keyboard_coords.json"), "w") as f:
-            json.dump(user_defined_points, f, indent=4)
-        print(f"Coordinates saved in {output_dir}keyboard_coords.json")
+        with open(os.path.join(output_dir, "keyboard_geometry.json"), "w") as f:
+            json.dump(result, f, indent=4)
+        print(f"Coordinates saved in {output_dir}keyboard_geometry.json")
 
 
 def add_object_coords(points):
@@ -123,7 +125,8 @@ def main():
     instructions = "Mark the 4 corners of the keyboard:\n" \
         "1. Click to place a point\n" \
         "2. Drag points to adjust\n" \
-        "3. Press 'q' to save and quit"
+        "3. Press '+' or '-' to adjust the black key length\n" \
+        "4. Press 'q' to save and quit"
 
     while True:
         img_copy = image.copy()

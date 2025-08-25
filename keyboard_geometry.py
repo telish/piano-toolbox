@@ -3,7 +3,30 @@ import utils
 # Based on: https://upload.wikimedia.org/wikipedia/commons/4/48/Pianoteilung.svg
 # Article: https://de.wikipedia.org/wiki/Klaviatur
 
-black_height = 100.  # If you change this value, you have to re_init()
+def load_black_height():
+    """
+    Load the black key height from the keyboard_geometry.json file.
+    If the file doesn't exist or doesn't contain black_height, use the default value.
+    """
+    import os
+    import json
+    
+    json_path = "calibration/keyboard/keyboard_geometry.json"
+    if os.path.exists(json_path):
+        try:
+            with open(json_path, "r") as f:
+                data = json.load(f)
+                if "black_height" in data:
+                    return data["black_height"]
+        except (json.JSONDecodeError, FileNotFoundError):
+            print(f"Warning: Could not read black_height from {json_path}")
+    
+    # Return default value if file doesn't exist or doesn't contain black_height
+    return 100.0
+
+# Load black_height from JSON or use default
+black_height = load_black_height()  # Whenever you change this value you have to re_init()
+
 BLACK_WIDTH = 12.7
 C_TOP_WIDTH = 15.05
 D_TOP_WIDTH = 15.3
