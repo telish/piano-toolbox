@@ -19,6 +19,8 @@ interactive_mode = config["interactive_mode"]
 
 video_path = os.path.join(recording_base, "video")
 
+draw_keys_3d.init()
+
 
 def parse_midi_mgs(filename):
     """Parse MIDI messages from file. Returns empty list if file doesn't exist."""
