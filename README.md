@@ -1,6 +1,5 @@
 # Piano Toolbox for Gesture and Movement Analysis
 
-
 ## Calibration
 
 Capture a photo of the keyboard. Place the keyboard photo in the `calibration/keyboard` directory.
@@ -13,13 +12,13 @@ Then, run `calibrate_keyboard.py` and mark the four corners of the piano keyboar
 - Click and drag points to position them precisely to the corners of the keyboard
 - Press '+' or '-' to adjust the black key length
 
-**calibrate_camera_orientation.py:** 
+**calibrate_camera_orientation.py:**
 
 - `--recording <path>`: Use a video file from a recording directory.
 - `--image <path>`: Use a static image file.
 - `--live <camera_index>`: Use a live camera feed (specify camera index).
 
-**calibrate_keyboard.py:** 
+**calibrate_keyboard.py:**
 
 - `--recording <path>`: Use a video file from a recording directory.
 - `--image <path>`: Use a static image file.
@@ -43,7 +42,6 @@ python record.py --args-video "--camera-index 1" --args-midi "--port-index 2"
 
 - Uses the default input microphone. You can change this in "System Settings -> Sound" (macOS).
 
-  
 **record_video.py:**  
 
 - `--camera-index <int>`: Select camera device (default: 0)
@@ -57,15 +55,11 @@ python record.py --args-video "--camera-index 1" --args-midi "--port-index 2"
 
 - `--port-index <int>`: Select MIDI input port by index (default: 0)
 
-
 ## Simulation
 
-Hand landmarks reference: https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker
+Hand landmarks reference: <https://ai.google.dev/edge/mediapipe/solutions/vision/hand_landmarker>
 
 **simulate_recording.py:**  
 
 - `--port-out <int>`: OSC outgoing port (default: 9876)
 - `--recording <path>`: Path to the recording directory (default: ./recording)
-
-
-
