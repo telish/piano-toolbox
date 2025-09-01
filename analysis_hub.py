@@ -21,8 +21,7 @@ def _point_distance_to_quad(point, quad):
     if polygon.contains(pt):
         # Return negative value: how far the point is inside
         # Calculate the distance to the nearest edge and return it as negative
-        nearest_point = polygon.boundary.interpolate(
-            polygon.boundary.project(pt))
+        nearest_point = polygon.boundary.interpolate(polygon.boundary.project(pt))
         return -pt.distance(nearest_point)
     else:
         return pt.distance(polygon)
@@ -38,35 +37,43 @@ class AnalysisHub:
     def closest_hand_and_fingers(self, midi_pitch):
         # Get the outline of the midi pitch and compare the x position of the hands with the outline
         # Return which one is closer to the outline
-        if self.last_mp_result['left_visible']:
-            left_x_coords = self.last_mp_result['left_landmarks_xyz'][0]
+        if self.last_mp_result["left_visible"]:
+            left_x_coords = self.last_mp_result["left_landmarks_xyz"][0]
             left_x = max(left_x_coords) * track_hands.image_width_px
-        if self.last_mp_result['right_visible']:
-            right_x_coords = self.last_mp_result['right_landmarks_xyz'][0]
+        if self.last_mp_result["right_visible"]:
+            right_x_coords = self.last_mp_result["right_landmarks_xyz"][0]
             right_x = min(right_x_coords) * track_hands.image_width_px
 
-        if not self.last_mp_result['left_visible'] and not self.last_mp_result['right_visible']:
+        if (
+            not self.last_mp_result["left_visible"]
+            and not self.last_mp_result["right_visible"]
+        ):
             return None, None
-        elif not self.last_mp_result['left_visible']:
-            result_hand = 'right'
-        elif not self.last_mp_result['right_visible']:
-            result_hand = 'left'
+        elif not self.last_mp_result["left_visible"]:
+            result_hand = "right"
+        elif not self.last_mp_result["right_visible"]:
+            result_hand = "left"
         else:
             outline = draw_keys_3d.pixel_coordinates_of_key(midi_pitch)
             key_mean_x = np.mean(outline[:, :, 0])
             left_dist = abs(left_x - key_mean_x)
             right_dist = abs(right_x - key_mean_x)
-            result_hand = 'left' if left_dist < right_dist else 'right'
+            result_hand = "left" if left_dist < right_dist else "right"
 
-        if result_hand == 'left':
-            landmarks = self.last_mp_result['left_landmarks_xyz']
+        if result_hand == "left":
+            landmarks = self.last_mp_result["left_landmarks_xyz"]
         else:
-            landmarks = self.last_mp_result['right_landmarks_xyz']
-        finger_tips_idx = [track_hands.MP_THUMB_TIP, track_hands.MP_INDEX_FINGER_TIP, track_hands.MP_MIDDLE_FINGER_TIP,
-                           track_hands.MP_RING_FINGER_TIP, track_hands.MP_PINKY_TIP]  # Indexes of finger tips in the landmarks
+            landmarks = self.last_mp_result["right_landmarks_xyz"]
+        finger_tips_idx = [
+            track_hands.MP_THUMB_TIP,
+            track_hands.MP_INDEX_FINGER_TIP,
+            track_hands.MP_MIDDLE_FINGER_TIP,
+            track_hands.MP_RING_FINGER_TIP,
+            track_hands.MP_PINKY_TIP,
+        ]  # Indexes of finger tips in the landmarks
         result_fingers = []
         closest_finger = None
-        min_distance = float('inf')
+        min_distance = float("inf")
 
         for tip_idx, tip in enumerate(finger_tips_idx):
             x = landmarks[0][tip] * track_hands.image_width_px
@@ -90,35 +97,36 @@ class AnalysisHub:
         return result_hand, result_fingers
 
     def process_midi_event(self, event):
-        msg = event['message']
-        if msg.type == 'note_on' and msg.velocity > 0:
+        msg = event["message"]
+        if msg.type == "note_on" and msg.velocity > 0:
             hand, finger = self.closest_hand_and_fingers(msg.note)
-            note_properties = {
-                "velocity": msg.velocity,
-                "hand": hand,
-                "finger": finger
-            }
+            note_properties = {"velocity": msg.velocity, "hand": hand, "finger": finger}
             self.current_notes[msg.note] = note_properties
             self.last_midi_result = dict(note_properties)
             self.last_midi_result["msg.type"] = "note_on"
             self.last_midi_result["note"] = msg.note
             osc_sender.send_message(f"/{hand}/note_on", msg.note, msg.velocity)
-        elif msg.type == 'note_off' or (msg.type == 'note_on' and msg.velocity == 0):
+        elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
             if msg.note in self.current_notes:
                 del self.current_notes[msg.note]
             self.last_midi_result = {
                 "msg.type": "note_off",
                 "note": msg.note,
-                "velocity": msg.velocity
+                "velocity": msg.velocity,
             }
 
     def process_frame(self, img):
         self.last_image_output = img.copy()
         self.last_mp_result = track_hands.analyze_frame(
-            img_input=img, img_output=self.last_image_output)
+            img_input=img, img_output=self.last_image_output
+        )
         for pitch in self.current_notes.keys():
             tip_on_key.find_tip_on_key(
-                pitch, self.current_notes[pitch], self.last_mp_result, img_output=self.last_image_output)
+                pitch,
+                self.current_notes[pitch],
+                self.last_mp_result,
+                img_output=self.last_image_output,
+            )
 
 
 hub = AnalysisHub()

@@ -14,14 +14,13 @@ output_dir = "recording/video"
 os.makedirs(output_dir, exist_ok=True)
 
 # Configure video capture
-fourcc = cv2.VideoWriter_fourcc(*'HFYU')  # HuffYUV Codec (lossless)
+fourcc = cv2.VideoWriter_fourcc(*"HFYU")  # HuffYUV Codec (lossless)
 fps = 30.0
-video_filename = os.path.join(output_dir, 'recording.avi')
-timestamps_filename = os.path.join(output_dir, 'timestamps.json')
+video_filename = os.path.join(output_dir, "recording.avi")
+timestamps_filename = os.path.join(output_dir, "timestamps.json")
 
 # Open camera
-cap = cv2.VideoCapture(config.get("camera_index", 0)
-                       )  # Default to camera index 0
+cap = cv2.VideoCapture(config.get("camera_index", 0))  # Default to camera index 0
 if not cap.isOpened():
     print("record-video.py: Error. Could not open webcam.")
     sys.exit(1)
@@ -45,7 +44,7 @@ def signal_handler(sig, frame):
     cv2.destroyAllWindows()
 
     # Save timestamps
-    with open(timestamps_filename, 'w') as f:
+    with open(timestamps_filename, "w") as f:
         json.dump(timestamps, f)
 
     print(f"record-video.py: Video saved to {video_filename}")
@@ -65,15 +64,12 @@ while True:
 
     # Save frame and timestamp
     out.write(frame)
-    timestamps.append({
-        'timestamp': time.time(),
-        'frame_number': len(timestamps)
-    })
+    timestamps.append({"timestamp": time.time(), "frame_number": len(timestamps)})
 
     # Show the image in a window
     if config.get("show_image", True):
-        cv2.imshow('Recording', frame)
+        cv2.imshow("Recording", frame)
 
     # Exit recording when 'q' is pressed
-    if cv2.waitKey(1) & 0xFF == ord('q'):
+    if cv2.waitKey(1) & 0xFF == ord("q"):
         signal_handler(signal.SIGINT, None)

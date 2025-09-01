@@ -3,6 +3,7 @@ import utils
 # Based on: https://upload.wikimedia.org/wikipedia/commons/4/48/Pianoteilung.svg
 # Article: https://de.wikipedia.org/wiki/Klaviatur
 
+
 def load_black_height():
     """
     Load the black key height from the keyboard_geometry.json file.
@@ -10,7 +11,7 @@ def load_black_height():
     """
     import os
     import json
-    
+
     json_path = "calibration/keyboard/keyboard_geometry.json"
     if os.path.exists(json_path):
         try:
@@ -20,12 +21,15 @@ def load_black_height():
                     return data["black_height"]
         except (json.JSONDecodeError, FileNotFoundError):
             print(f"Warning: Could not read black_height from {json_path}")
-    
+
     # Return default value if file doesn't exist or doesn't contain black_height
     return 100.0
 
+
 # Load black_height from JSON or use default
-black_height = load_black_height()  # Whenever you change this value you have to re_init()
+black_height = (
+    load_black_height()
+)  # Whenever you change this value you have to re_init()
 
 BLACK_WIDTH = 12.7
 C_TOP_WIDTH = 15.05
@@ -35,12 +39,13 @@ F_TOP_WIDTH = 13.95
 G_TOP_WIDTH = 14.2
 A_TOP_WIDTH = 14.2
 B_TOP_WIDTH = 13.95
-LOWER_A_TOP_WIDTH = A_TOP_WIDTH + BLACK_WIDTH / 2.
+LOWER_A_TOP_WIDTH = A_TOP_WIDTH + BLACK_WIDTH / 2.0
 WHITE_BOTTOM_WIDTH = 23.6
 
 KEYBOARD_WIDTH = 52 * WHITE_BOTTOM_WIDTH
-WHITE_HEIGHT = 145.
+WHITE_HEIGHT = 145.0
 
+# fmt:off
 white_keys = [
     21, 23, 24, 26, 28, 29, 31,  # lowest octave
     33, 35, 36, 38, 40, 41, 43,  # second octave
@@ -51,20 +56,20 @@ white_keys = [
     93, 95, 96, 98, 100, 101, 103,  # seventh octave
     105, 107, 108  # highest octave
 ]
+# fmt:on
 black_keys = [key for key in range(21, 108) if key not in white_keys]
 
 keyboard_outline = {
-    "top-left": [0,  0],
-    "top-right": [KEYBOARD_WIDTH,  0],
+    "top-left": [0, 0],
+    "top-right": [KEYBOARD_WIDTH, 0],
     "bottom-right": [KEYBOARD_WIDTH, WHITE_HEIGHT],
-    "bottom-left": [0,  WHITE_HEIGHT]
+    "bottom-left": [0, WHITE_HEIGHT],
 }
 
 
 def pitch_class(midi_pitch):
     c = midi_pitch % 12
-    pitch_classes = ['C', 'C#', 'D', 'D#', 'E',
-                     'F', 'F#', 'G', 'G#', 'A', 'A#', 'B']
+    pitch_classes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     return pitch_classes[c]
 
 
@@ -76,29 +81,29 @@ def re_init():
             left_at_top.append(left_at_top[-1] + LOWER_A_TOP_WIDTH)
         else:
             match pitch_class(pitch):
-                case 'C':
+                case "C":
                     left_at_top.append(left_at_top[-1] + C_TOP_WIDTH)
-                case 'C#':
+                case "C#":
                     left_at_top.append(left_at_top[-1] + BLACK_WIDTH)
-                case 'D':
+                case "D":
                     left_at_top.append(left_at_top[-1] + D_TOP_WIDTH)
-                case 'D#':
+                case "D#":
                     left_at_top.append(left_at_top[-1] + BLACK_WIDTH)
-                case 'E':
+                case "E":
                     left_at_top.append(left_at_top[-1] + E_TOP_WIDTH)
-                case 'F':
+                case "F":
                     left_at_top.append(left_at_top[-1] + F_TOP_WIDTH)
-                case 'F#':
+                case "F#":
                     left_at_top.append(left_at_top[-1] + BLACK_WIDTH)
-                case 'G':
+                case "G":
                     left_at_top.append(left_at_top[-1] + G_TOP_WIDTH)
-                case 'G#':
+                case "G#":
                     left_at_top.append(left_at_top[-1] + BLACK_WIDTH)
-                case 'A':
+                case "A":
                     left_at_top.append(left_at_top[-1] + A_TOP_WIDTH)
-                case 'A#':
+                case "A#":
                     left_at_top.append(left_at_top[-1] + BLACK_WIDTH)
-                case 'B':
+                case "B":
                     left_at_top.append(left_at_top[-1] + B_TOP_WIDTH)
 
     left_at_bottom = []
@@ -119,19 +124,19 @@ def re_init():
             right_at_top[i] += BLACK_WIDTH
         else:
             match pitch_class(pitch):
-                case 'C':
+                case "C":
                     right_at_top[i] += C_TOP_WIDTH
-                case 'D':
+                case "D":
                     right_at_top[i] += D_TOP_WIDTH
-                case 'E':
+                case "E":
                     right_at_top[i] += E_TOP_WIDTH
-                case 'F':
+                case "F":
                     right_at_top[i] += F_TOP_WIDTH
-                case 'G':
+                case "G":
                     right_at_top[i] += G_TOP_WIDTH
-                case 'A':
+                case "A":
                     right_at_top[i] += A_TOP_WIDTH
-                case 'B':
+                case "B":
                     right_at_top[i] += B_TOP_WIDTH
 
     right_at_bottom = left_at_bottom.copy()
@@ -158,14 +163,14 @@ def key_points(midi_pitch):
             [right_at_bottom[idx], WHITE_HEIGHT],  # bottom-right
             [right_at_bottom[idx], black_height],  # right-middle 1/2
             [right_at_top[idx], black_height],  # right-middle 2/2
-            [right_at_top[idx], 0]  # top-right
+            [right_at_top[idx], 0],  # top-right
         ]
     else:
         return [
             [left_at_top[idx], 0],  # top-left
             [left_at_top[idx], black_height],  # left-middle
             [right_at_top[idx], black_height],  # right-middle
-            [right_at_top[idx], 0]  # top-right
+            [right_at_top[idx], 0],  # top-right
         ]
 
 
@@ -180,7 +185,7 @@ def key_bounding_box(midi_pitch):
             [left, 0],  # top-left
             [left, WHITE_HEIGHT],  # bottom-left
             [right, WHITE_HEIGHT],  # bottom-right
-            [right, 0]  # top-right
+            [right, 0],  # top-right
         ]
 
 
@@ -201,19 +206,24 @@ if __name__ == "__main__":
         # Get points and add y-offset
         key_pts = np.array([key_points(pitch)], dtype=np.int32)
 
-        cv2.polylines(img, key_pts, isClosed=True,
-                      color=(0, 200, 0), thickness=2)
+        cv2.polylines(img, key_pts, isClosed=True, color=(0, 200, 0), thickness=2)
 
         # Also shift text
-        cv2.putText(img, f'{pitch}', (int(left_at_top[i] + 1), 15),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.4, (0, 0, 255), 1)
+        cv2.putText(
+            img,
+            f"{pitch}",
+            (int(left_at_top[i] + 1), 15),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.4,
+            (0, 0, 255),
+            1,
+        )
 
         # Also shift bounding box
         box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32)
         box_pts[0, :, 1] += int(WHITE_HEIGHT + 2)
 
-        cv2.polylines(img, box_pts, isClosed=True,
-                      color=(200, 0, 0), thickness=2)
+        cv2.polylines(img, box_pts, isClosed=True, color=(200, 0, 0), thickness=2)
 
     cv2.imshow("Keyboard Geometry", img)
     cv2.waitKey(0)

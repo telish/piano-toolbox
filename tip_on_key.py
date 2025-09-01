@@ -6,28 +6,26 @@ import track_hands
 
 
 def find_tip_on_key(midi_pitch, note_properties, mp_result, img_output=None):
-    hand = note_properties['hand']
-    finger = note_properties['finger']
+    hand = note_properties["hand"]
+    finger = note_properties["finger"]
     if hand is None or finger is None:
         return None
 
     tip_idx = track_hands.finger_to_tip_index[finger[0]]
-    x_tip = mp_result[hand + '_landmarks_xyz'][0][tip_idx] * \
-        track_hands.image_width_px
-    y_tip = mp_result[hand + '_landmarks_xyz'][1][tip_idx] * \
-        track_hands.image_height_px
+    x_tip = mp_result[hand + "_landmarks_xyz"][0][tip_idx] * track_hands.image_width_px
+    y_tip = mp_result[hand + "_landmarks_xyz"][1][tip_idx] * track_hands.image_height_px
 
-    key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(
-        midi_pitch)
+    key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)
     u, v = point_to_trapezoid_coords((x_tip, y_tip), key_outline)
     if img_output is not None:
-        draw_tip_on_key(img_output, key_outline,
-                        (x_tip, y_tip), (u, v))
+        draw_tip_on_key(img_output, key_outline, (x_tip, y_tip), (u, v))
 
     return u, v
 
 
-def draw_tip_on_key(img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb=False, show_text=False):
+def draw_tip_on_key(
+    img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb=False, show_text=False
+):
     """
     Draw a key and a fingertip point with the trapezoid coordinates.
     """
@@ -39,11 +37,13 @@ def draw_tip_on_key(img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb
     # Draw fingertip as a small square
     square_size = 3  # Half side length of the square
     x, y = int(tip_xy_coords[0]), int(tip_xy_coords[1])
-    cv2.rectangle(img,
-                  (x - square_size, y - square_size),  # Top left corner
-                  (x + square_size, y + square_size),  # Bottom right corner
-                  (255, 0, 0),  # Color (Blue)
-                  -1)  # Filled
+    cv2.rectangle(
+        img,
+        (x - square_size, y - square_size),  # Top left corner
+        (x + square_size, y + square_size),  # Bottom right corner
+        (255, 0, 0),  # Color (Blue)
+        -1,
+    )  # Filled
 
     # Calculate trapezoid coordinates
     u, v = tip_uv_coords
@@ -73,8 +73,16 @@ def draw_tip_on_key(img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb
     # Display text with coordinates
     if show_text:
         coord_text = f"u={u:.2f}, v={v:.2f}"
-        cv2.putText(img, coord_text, (int(tip_xy_coords[0])+10, int(tip_xy_coords[1])-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1, cv2.LINE_AA)
+        cv2.putText(
+            img,
+            coord_text,
+            (int(tip_xy_coords[0]) + 10, int(tip_xy_coords[1]) - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.5,
+            (255, 255, 255),
+            1,
+            cv2.LINE_AA,
+        )
 
     return img
 
@@ -113,8 +121,8 @@ def point_to_trapezoid_coords(point, trapezoid):
 
     for _ in range(max_iterations):
         # Calculate point at current (u,v)
-        top = p0 + u * (p1 - p0)      # Point on top edge
-        bottom = p3 + u * (p2 - p3)   # Point on bottom edge
+        top = p0 + u * (p1 - p0)  # Point on top edge
+        bottom = p3 + u * (p2 - p3)  # Point on bottom edge
         computed_point = top + v * (bottom - top)
 
         # Check if we are close enough to the target point
@@ -124,7 +132,7 @@ def point_to_trapezoid_coords(point, trapezoid):
 
         # Otherwise update u and v
         # Calculate derivatives with respect to u and v
-        du_vector = (1-v) * (p1 - p0) + v * (p2 - p3)
+        du_vector = (1 - v) * (p1 - p0) + v * (p2 - p3)
         dv_vector = bottom - top
 
         # Create Jacobian matrix
@@ -162,11 +170,9 @@ def test_interactive():
     def mouse_callback(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONDOWN:
             img_copy = img.copy()
-            key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(
-                midi_pitch)
+            key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)
             u, v = point_to_trapezoid_coords((x, y), key_outline)
-            draw_tip_on_key(img_copy, key_outline,
-                            (x, y), (u, v), show_bb=True)
+            draw_tip_on_key(img_copy, key_outline, (x, y), (u, v), show_bb=True)
             cv2.imshow("Test Trapezoid Coordinates", img_copy)
 
     # Set up window
@@ -182,11 +188,11 @@ def test_interactive():
     key_outline_pts = np.int32(key_outline).reshape((-1, 1, 2))
     cv2.polylines(img, [key_outline_pts], True, (0, 255, 0), 2)
     cv2.imshow("Test Trapezoid Coordinates", img)
-    
+
     print("Click on the key to see trapezoid coordinates. Press 'q' to quit.")
     while True:
         key = cv2.waitKey(0)
-        if key == ord('q'):
+        if key == ord("q"):
             break
 
     cv2.destroyAllWindows()

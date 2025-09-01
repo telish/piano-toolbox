@@ -15,7 +15,7 @@ finger_to_tip_index = {
     2: MP_INDEX_FINGER_TIP,
     3: MP_MIDDLE_FINGER_TIP,
     4: MP_RING_FINGER_TIP,
-    5: MP_PINKY_TIP
+    5: MP_PINKY_TIP,
 }
 
 # This is set to actual values once analyze_frame is first called
@@ -36,7 +36,7 @@ def analyze_frame(img_input, img_output=None):
         "left_visible": False,
         "right_visible": False,
         "left_landmarks_xyz": None,
-        "right_landmarks_xyz": None
+        "right_landmarks_xyz": None,
     }
     if mp_results.multi_hand_landmarks:
         for idx, hand_landmarks in enumerate(mp_results.multi_hand_landmarks):
@@ -69,19 +69,27 @@ def analyze_frame(img_input, img_output=None):
 
             if label == "left":
                 mp.solutions.drawing_utils.draw_landmarks(
-                    img_output, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
+                    img_output,
+                    hand_landmarks,
+                    mp.solutions.hands.HAND_CONNECTIONS,
                     mp.solutions.drawing_utils.DrawingSpec(
-                        color=(0, 0, 200), thickness=2, circle_radius=2),
+                        color=(0, 0, 200), thickness=2, circle_radius=2
+                    ),
                     mp.solutions.drawing_utils.DrawingSpec(
-                        color=(255, 255, 255), thickness=2)
+                        color=(255, 255, 255), thickness=2
+                    ),
                 )
             elif label == "right":
                 mp.solutions.drawing_utils.draw_landmarks(
-                    img_output, hand_landmarks, mp.solutions.hands.HAND_CONNECTIONS,
+                    img_output,
+                    hand_landmarks,
+                    mp.solutions.hands.HAND_CONNECTIONS,
                     mp.solutions.drawing_utils.DrawingSpec(
-                        color=(0, 200, 0), thickness=2, circle_radius=2),
+                        color=(0, 200, 0), thickness=2, circle_radius=2
+                    ),
                     mp.solutions.drawing_utils.DrawingSpec(
-                        color=(255, 255, 255), thickness=2)
+                        color=(255, 255, 255), thickness=2
+                    ),
                 )
 
             osc_sender.send_message(f"/{label}/landmarks", *flat_coords)
@@ -95,7 +103,8 @@ def analyze_frame(img_input, img_output=None):
 
 
 hands = mp.solutions.hands.Hands(
-    min_detection_confidence=0.7, min_tracking_confidence=0.5)
+    min_detection_confidence=0.7, min_tracking_confidence=0.5
+)
 
 
 if __name__ == "__main__":
@@ -106,8 +115,8 @@ if __name__ == "__main__":
         if not ret:
             break
         img, _ = analyze_frame(frame)
-        cv2.imshow('Hand Tracking', img)
-        if cv2.waitKey(1) & 0xFF == ord('q'):  # Press 'q' to exit the video feed
+        cv2.imshow("Hand Tracking", img)
+        if cv2.waitKey(1) & 0xFF == ord("q"):  # Press 'q' to exit the video feed
             break
 
     cap.release()

@@ -21,17 +21,20 @@ def save_orientation():
     output_dir = "calibration/"
     os.makedirs(output_dir, exist_ok=True)
     with open(os.path.join(output_dir, "camera_orientation.json"), "w") as f:
-        json.dump({"flip_horizontal": flip_horizontal,
-                   "flip_vertical": flip_vertical}, f)
+        json.dump(
+            {"flip_horizontal": flip_horizontal, "flip_vertical": flip_vertical}, f
+        )
 
 
 def main():
     global flip_horizontal, flip_vertical
 
     # Example with long text that will be automatically wrapped plus a manual line break
-    text = "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 'q' to save and quit. " \
-        "Desired result: (1) The keyboard appears at the top of the image. " \
+    text = (
+        "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 'q' to save and quit. "
+        "Desired result: (1) The keyboard appears at the top of the image. "
         "(2) The left hand appears on the left side of the image, the right hand on the right."
+    )
 
     cv2.namedWindow("Keyboard View")
 
@@ -49,12 +52,12 @@ def main():
 
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord('q'):
+        if key == ord("q"):
             save_orientation()
             break
-        elif key == ord('h'):
+        elif key == ord("h"):
             flip_horizontal = not flip_horizontal
-        elif key == ord('v'):
+        elif key == ord("v"):
             flip_vertical = not flip_vertical
 
     cv2.destroyAllWindows()

@@ -7,7 +7,7 @@ def parse_timestamps(json_path):
     """
     Liest die Timestamps aus der JSON-Datei.
     """
-    with open(json_path, 'r') as f:
+    with open(json_path, "r") as f:
         return json.load(f)
 
 
@@ -22,10 +22,10 @@ def plot_inter_frame_intervals(data, bins=50):
     timestamps = [d["timestamp"] for d in data]
     timestamps.sort()
 
-    frame_rate = [1./(t2 - t1) for t1, t2 in zip(timestamps[:-1], timestamps[1:])]
+    frame_rate = [1.0 / (t2 - t1) for t1, t2 in zip(timestamps[:-1], timestamps[1:])]
 
     plt.figure(figsize=(10, 6))
-    plt.hist(frame_rate, bins=bins, edgecolor='black')
+    plt.hist(frame_rate, bins=bins, edgecolor="black")
     plt.xlabel("Frame Rate (fps)")
     plt.ylabel("Häufigkeit")
     plt.title(f"Verteilung der Frame-Raten\n{len(frame_rate)} Frames")

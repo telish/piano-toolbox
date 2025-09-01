@@ -12,6 +12,8 @@ def configure(port):
 
 def send_message(address, *args):
     global osc_client
-    assert osc_client is not None, "OSC client is not configured. Call configure() first."
+    assert (
+        osc_client is not None
+    ), "OSC client is not configured. Call configure() first."
     if osc_client is not None:
         osc_client.send_message(address, args)

@@ -11,14 +11,16 @@ import keyboard_geometry
 
 
 def parse_args():
-    parser = argparse.ArgumentParser(description='Calibrate piano keyboard from video, image, or live camera feed')
-    
+    parser = argparse.ArgumentParser(
+        description="Calibrate piano keyboard from video, image, or live camera feed"
+    )
+
     # Create mutually exclusive group for input sources
     input_group = parser.add_mutually_exclusive_group(required=False)
-    input_group.add_argument('--recording', type=str, help='Path to a recording')
-    input_group.add_argument('--image', type=str, help='Path to image file')
-    input_group.add_argument('--live', type=int, help='Camera index for live feed')
-    
+    input_group.add_argument("--recording", type=str, help="Path to a recording")
+    input_group.add_argument("--image", type=str, help="Path to image file")
+    input_group.add_argument("--live", type=int, help="Camera index for live feed")
+
     return parser.parse_args()
 
 
@@ -31,15 +33,26 @@ def draw_points(img, points):
     for i, point in enumerate(points):
         p = point["pixel"]
         size = 5 if i == dragging_index else 3  # Larger point if being dragged
-        color = (0, 0, 255) if i == dragging_index else (
-            255, 0, 255)  # Red if dragged, magenta otherwise
-        cv2.rectangle(img,
-                      (int(p[0])-size, int(p[1])-size),
-                      (int(p[0])+size, int(p[1])+size),
-                      color, -1)
+        color = (
+            (0, 0, 255) if i == dragging_index else (255, 0, 255)
+        )  # Red if dragged, magenta otherwise
+        cv2.rectangle(
+            img,
+            (int(p[0]) - size, int(p[1]) - size),
+            (int(p[0]) + size, int(p[1]) + size),
+            color,
+            -1,
+        )
         # Display point number
-        cv2.putText(img, f"{i+1}: {point['object']}", (int(p[0])+10, int(p[1])-10),
-                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, color, 2)
+        cv2.putText(
+            img,
+            f"{i+1}: {point['object']}",
+            (int(p[0]) + 10, int(p[1]) - 10),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.6,
+            color,
+            2,
+        )
 
 
 def draw_trapezoid(img, points):
@@ -49,15 +62,29 @@ def draw_trapezoid(img, points):
         # For drawing the trapezoid, make sure points are in the correct order
         if len(points) == 4:
             sorted_points = get_correspondences_without_projection(points)
-            ordered_points = [sorted_points[0]["pixel"], sorted_points[1]["pixel"],
-                              sorted_points[3]["pixel"], sorted_points[2]["pixel"]]  # Correct drawing order
-            cv2.polylines(img, [np.array(ordered_points, np.int32)],
-                          isClosed=True, color=(255, 0, 255), thickness=1)
+            ordered_points = [
+                sorted_points[0]["pixel"],
+                sorted_points[1]["pixel"],
+                sorted_points[3]["pixel"],
+                sorted_points[2]["pixel"],
+            ]  # Correct drawing order
+            cv2.polylines(
+                img,
+                [np.array(ordered_points, np.int32)],
+                isClosed=True,
+                color=(255, 0, 255),
+                thickness=1,
+            )
         else:
             # For incomplete sets, just connect in the order clicked
             all_pixel_coords = [p["pixel"] for p in user_defined_points]
-            cv2.polylines(img, [np.array(all_pixel_coords, np.int32)],
-                          isClosed=True, color=(255, 0, 255), thickness=1)
+            cv2.polylines(
+                img,
+                [np.array(all_pixel_coords, np.int32)],
+                isClosed=True,
+                color=(255, 0, 255),
+                thickness=1,
+            )
 
 
 def find_closest_point_index(x, y, points, max_distance=20):
@@ -66,10 +93,10 @@ def find_closest_point_index(x, y, points, max_distance=20):
         return -1
 
     closest_idx = -1
-    min_dist = float('inf')
+    min_dist = float("inf")
 
     for i, point in enumerate(points):
-        dist = np.sqrt((point[0] - x)**2 + (point[1] - y)**2)
+        dist = np.sqrt((point[0] - x) ** 2 + (point[1] - y) ** 2)
         if dist < min_dist and dist <= max_distance:
             min_dist = dist
             closest_idx = i
@@ -84,7 +111,8 @@ def mouse_callback(event, x, y, flags, param):
         # Check if an existing point was clicked
         all_pixel_coords = [p["pixel"] for p in user_defined_points]
         dragging_index = find_closest_point_index(
-            x, y, all_pixel_coords, drag_threshold)
+            x, y, all_pixel_coords, drag_threshold
+        )
 
         # If no nearby point and still room for more points
         if dragging_index == -1:
@@ -107,8 +135,10 @@ def save_coords():
         output_dir = "calibration/keyboard/"
         os.makedirs(output_dir, exist_ok=True)
         add_object_coords(user_defined_points)
-        result = {"keypoint_mappings": user_defined_points,
-                  "black_height": keyboard_geometry.black_height}
+        result = {
+            "keypoint_mappings": user_defined_points,
+            "black_height": keyboard_geometry.black_height,
+        }
 
         with open(os.path.join(output_dir, "keyboard_geometry.json"), "w") as f:
             json.dump(result, f, indent=4)
@@ -151,16 +181,17 @@ def main():
         image_path = utils.get_keyboard_image_path()
         image = cv2.imread(image_path)
 
-
     cv2.namedWindow("Draw Keyboard")
-    
+
     cv2.setMouseCallback("Draw Keyboard", mouse_callback)
 
-    instructions = "Mark the 4 corners of the keyboard:\n" \
-        "1. Click to place a point\n" \
-        "2. Drag points to adjust\n" \
-        "3. Press '+' or '-' to adjust the black key length\n" \
+    instructions = (
+        "Mark the 4 corners of the keyboard:\n"
+        "1. Click to place a point\n"
+        "2. Drag points to adjust\n"
+        "3. Press '+' or '-' to adjust the black key length\n"
         "4. Press 'q' to save and quit"
+    )
 
     while True:
         if cap is not None:
@@ -171,7 +202,7 @@ def main():
             img_draw = image
         else:
             img_draw = image.copy()
-        
+
         img_draw = utils.flip_image(img_draw)
 
         # Draw points first
@@ -191,19 +222,19 @@ def main():
             draw_keys_3d.draw_keyboard(img_draw, (0, 200, 0))
 
         # Add instructions
-        utils.add_text_to_image(img_draw, instructions, position='bottom-left')
+        utils.add_text_to_image(img_draw, instructions, position="bottom-left")
 
         cv2.imshow("Draw Keyboard", img_draw)
 
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord('q'):  # Save and quit
+        if key == ord("q"):  # Save and quit
             save_coords()
             break
-        elif key == ord('+') or key == ord('='):  # Increase black key length
+        elif key == ord("+") or key == ord("="):  # Increase black key length
             keyboard_geometry.black_height = keyboard_geometry.black_height + 0.5
             keyboard_geometry.re_init()
-        elif key == ord('-') or key == ord('_'):  # Decrease black key length
+        elif key == ord("-") or key == ord("_"):  # Decrease black key length
             keyboard_geometry.black_height = keyboard_geometry.black_height - 0.5
             keyboard_geometry.re_init()
 
@@ -212,7 +243,7 @@ def main():
 
 def find_closest_point(pt):
     closest = None
-    min_distance = float('inf')
+    min_distance = float("inf")
     closest_pitch = None
     closest_index = None  # Add index tracking
 
