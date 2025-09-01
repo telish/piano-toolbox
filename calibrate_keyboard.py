@@ -1,3 +1,4 @@
+import argparse
 import json
 import os
 
@@ -8,12 +9,17 @@ import utils
 import draw_keys_3d
 import keyboard_geometry
 
-image_path = utils.get_keyboard_image_path()
-image = cv2.imread(image_path)
 
-if image is None:
-    print("Error: Could not load image!")
-    exit()
+def parse_args():
+    parser = argparse.ArgumentParser(description='Calibrate piano keyboard from video, image, or live camera feed')
+    
+    # Create mutually exclusive group for input sources
+    input_group = parser.add_mutually_exclusive_group(required=False)
+    input_group.add_argument('--recording', type=str, help='Path to a recording')
+    input_group.add_argument('--image', type=str, help='Path to image file')
+    input_group.add_argument('--live', type=int, help='Camera index for live feed')
+    
+    return parser.parse_args()
 
 
 user_defined_points = []
@@ -119,7 +125,35 @@ def add_object_coords(points):
 def main():
     global user_defined_points
 
+    cap = None
+    image = None
+    args = parse_args()
+    print(args)
+
+    if args.recording:
+        video_path = os.path.join(args.recording, "video", "recording.avi")
+        # Open video and read first frame
+        c = cv2.VideoCapture(video_path)
+        if not c.isOpened():
+            raise ValueError(f"Could not open video file: {video_path}")
+        ret, image = c.read()
+        if not ret:
+            raise ValueError(f"Could not read frame from video: {video_path}")
+    elif args.image:
+        image = cv2.imread(args.image)
+        if image is None:
+            raise ValueError(f"Could not load image file: {args.image}")
+    elif args.live is not None:
+        cap = cv2.VideoCapture(args.live)
+        if not cap.isOpened():
+            raise ValueError(f"Could not open camera: {args.live}")
+    else:
+        image_path = utils.get_keyboard_image_path()
+        image = cv2.imread(image_path)
+
+
     cv2.namedWindow("Draw Keyboard")
+    
     cv2.setMouseCallback("Draw Keyboard", mouse_callback)
 
     instructions = "Mark the 4 corners of the keyboard:\n" \
@@ -129,29 +163,37 @@ def main():
         "4. Press 'q' to save and quit"
 
     while True:
-        img_copy = image.copy()
-        img_copy = utils.flip_image(img_copy)
+        if cap is not None:
+            ret, image = cap.read()
+            if not ret:
+                print("Failed to grab frame from camera.")
+                exit(1)
+            img_draw = image
+        else:
+            img_draw = image.copy()
+        
+        img_draw = utils.flip_image(img_draw)
 
         # Draw points first
-        draw_points(img_copy, user_defined_points)
+        draw_points(img_draw, user_defined_points)
 
         # Different rendering based on number of points
         if len(user_defined_points) < 4:
-            draw_trapezoid(img_copy, user_defined_points)
+            draw_trapezoid(img_draw, user_defined_points)
         elif len(user_defined_points) == 4:
-            draw_trapezoid(img_copy, user_defined_points)
+            draw_trapezoid(img_draw, user_defined_points)
             get_correspondences_without_projection(user_defined_points)
             draw_keys_3d.init(user_defined_points)
-            draw_keys_3d.draw_keyboard(img_copy, (0, 200, 0))
+            draw_keys_3d.draw_keyboard(img_draw, (0, 200, 0))
         elif len(user_defined_points) > 4:
             add_object_coords(user_defined_points)
             draw_keys_3d.init(user_defined_points)
-            draw_keys_3d.draw_keyboard(img_copy, (0, 200, 0))
+            draw_keys_3d.draw_keyboard(img_draw, (0, 200, 0))
 
         # Add instructions
-        utils.add_text_to_image(img_copy, instructions, position='bottom-left')
+        utils.add_text_to_image(img_draw, instructions, position='bottom-left')
 
-        cv2.imshow("Draw Keyboard", img_copy)
+        cv2.imshow("Draw Keyboard", img_draw)
 
         key = cv2.waitKey(1) & 0xFF
 
