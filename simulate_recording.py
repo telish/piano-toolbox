@@ -22,7 +22,7 @@ video_path = os.path.join(recording_base, "video")
 draw_keys_3d.init()
 
 
-def parse_midi_mgs(filename):
+def parse_midi_msgs(filename):
     """Parse MIDI messages from file. Returns empty list if file doesn't exist."""
     result = []
     try:
@@ -93,13 +93,13 @@ def draw_text(img, instruction_text):
 
 
 def handle_keyboard_input(img):
-    global skip_to_next_note
+    global skip_to_next_note, interactive_mode
     stop = interactive_mode and \
         ((not skip_to_next_note['active']) or
          (skip_to_next_note['active'] and skip_to_next_note['note_received']))
     if stop:
         # Draw instructions directly on the image
-        instruction_text = "Press 'f' for next frame, 'n' for the next note, 'q' to quit"
+        instruction_text = "Press 'f' for next frame, 'n' for the next note, 'e' to continue until the end, 'q' to quit"
         draw_text(img, instruction_text)
 
         while True:
@@ -108,7 +108,10 @@ def handle_keyboard_input(img):
                 break
             if key == ord('n'):
                 skip_to_next_note = {'active': True,
-                                     'note_received': False, 'next_frame': False}
+                                     'note_received': False}
+                break
+            elif key == ord('e'):
+                interactive_mode = False
                 break
             elif key == ord('q'):
                 print("Quitting simulation.")
@@ -118,7 +121,7 @@ def handle_keyboard_input(img):
         cv2.waitKey(1)  # Just to update the window without blocking
 
 
-def get_all_events(recording_base, parse_midi_mgs, parse_video):
+def get_all_events(recording_base, video_path, parse_midi_mgs, parse_video):
     midi_events = parse_midi_mgs(os.path.join(
         recording_base, "midi/midi_msg.txt"))
     video_events = parse_video(video_path)
@@ -184,7 +187,7 @@ def process_video_frame(event, video_processor):
         else:
             color = (200, 200, 0)  # Yellow for unknown hand
 
-        annotation = f"{hub.current_notes[midi_pitch]['finger']}"
+        annotation = f"{', '.join(str(x) for x in hub.current_notes[midi_pitch]['finger'])}"
         img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
 
     cv2.imshow('Simulate Recording', img)
@@ -192,14 +195,15 @@ def process_video_frame(event, video_processor):
 
 
 video_player = VideoPlayer(video_path)
-all_events = get_all_events(recording_base, parse_midi_mgs, parse_video)
+all_events = get_all_events(recording_base, video_path, parse_midi_msgs, parse_video)
 start_real = time.time()
 start_recording = all_events[0]['timestamp']
 img = None
 for event in all_events:
     # Wait until the event's timestamp is reached
-    time_to_sleep = event['timestamp'] - \
-        start_recording - (time.time() - start_real)
+    time_to_sleep = (
+        event['timestamp'] - start_recording - (time.time() - start_real)
+    )
     if time_to_sleep < 0:  # Make sure time to sleep is not negative.
         time_to_sleep = 0
     if not FAST_MODE:

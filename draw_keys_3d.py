@@ -20,10 +20,10 @@ def init(keypoint_mappings=None):
     """
     global H
 
-
     if keypoint_mappings is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(script_dir, "calibration", "keyboard", "keyboard_geometry.json")
+        json_path = os.path.join(
+            script_dir, "calibration", "keyboard", "keyboard_geometry.json")
         if not os.path.exists(json_path):
             raise FileNotFoundError(f"Calibration file not found: {json_path}")
         with open(json_path, "r") as file:
@@ -45,7 +45,7 @@ def init(keypoint_mappings=None):
 
 
 def draw_polygon(img, points, color):
-    img_points = np.int32(points)
+    img_points = np.round(points).astype(np.int32)
     img_points = img_points.reshape((-1, 1, 2))
     cv2.polylines(img, [img_points], isClosed=True,
                   color=color, thickness=1)
@@ -101,10 +101,19 @@ def draw_annotation(img, midi_pitch, color, annotation, image_points):
         x_max = max(x_values)
 
         # Calculate midpoint
-        x = (x_min + x_max) / 2 - text_width / 2
+        x = int((x_min + x_max) / 2 - text_width / 2)
         y = int(image_points[0][0][1]) - y_offset
 
-        cv2.putText(img, annotation, (int(x), y),
+        # Add white background rectangle
+        bg_padding = 2
+        bg_x1 = x - bg_padding
+        bg_y1 = y - text_height - bg_padding
+        bg_x2 = x + text_width + bg_padding
+        bg_y2 = y + bg_padding
+        cv2.rectangle(img, (bg_x1, bg_y1), (bg_x2, bg_y2), (255, 255, 255), -1)
+
+        # Draw text
+        cv2.putText(img, annotation, (x, y),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 1, cv2.LINE_AA)
 
 
@@ -112,6 +121,9 @@ def main():
     init()
     image_path = utils.get_keyboard_image_path()
     img = cv2.imread(image_path)
+    if img is None:
+        raise FileNotFoundError(
+            f"Image not found or unable to load: {image_path}")
     img = utils.flip_image(img)
 
     for midi_pitch in range(21, 109):

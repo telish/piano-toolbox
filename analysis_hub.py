@@ -10,16 +10,20 @@ import tip_on_key
 def _point_distance_to_quad(point, quad):
     """
     point: tuple (x, y)
-    quad: numpy array mit shape (4, 1, 2)
-    Returns 0, if the point is inside the polygon,
+    quad: numpy array with shape (4, 1, 2)
+    Returns a negative value (= how much it is inside), if the point is inside the polygon,
     otherwise the minimum distance to the polygon.
     """
-    # quad in (4,2) umwandeln
+    # Convert quad to shape (4,2)
     quad_points = quad[:, 0, :]
     polygon = Polygon(quad_points)
     pt = Point(point)
     if polygon.contains(pt):
-        return 0.0
+        # Return negative value: how far the point is inside
+        # Calculate the distance to the nearest edge and return it as negative
+        nearest_point = polygon.boundary.interpolate(
+            polygon.boundary.project(pt))
+        return -pt.distance(nearest_point)
     else:
         return pt.distance(polygon)
 
@@ -31,12 +35,12 @@ class AnalysisHub:
         self.last_mp_result = None
         self.last_image_output = None
 
-    def closest_hand_and_finger(self, midi_pitch):
+    def closest_hand_and_fingers(self, midi_pitch):
         # Get the outline of the midi pitch and compare the x position of the hands with the outline
-        # Return which one is closer to the outline?
+        # Return which one is closer to the outline
         if self.last_mp_result['left_visible']:
             left_x_coords = self.last_mp_result['left_landmarks_xyz'][0]
-        left_x = max(left_x_coords) * track_hands.image_width_px
+            left_x = max(left_x_coords) * track_hands.image_width_px
         if self.last_mp_result['right_visible']:
             right_x_coords = self.last_mp_result['right_landmarks_xyz'][0]
             right_x = min(right_x_coords) * track_hands.image_width_px
@@ -60,24 +64,35 @@ class AnalysisHub:
             landmarks = self.last_mp_result['right_landmarks_xyz']
         finger_tips_idx = [track_hands.MP_THUMB_TIP, track_hands.MP_INDEX_FINGER_TIP, track_hands.MP_MIDDLE_FINGER_TIP,
                            track_hands.MP_RING_FINGER_TIP, track_hands.MP_PINKY_TIP]  # Indexes of finger tips in the landmarks
+        result_fingers = []
+        closest_finger = None
         min_distance = float('inf')
-        result_finger = None
+
         for tip_idx, tip in enumerate(finger_tips_idx):
             x = landmarks[0][tip] * track_hands.image_width_px
             y = landmarks[1][tip] * track_hands.image_height_px
             point = (x, y)
             distance = _point_distance_to_quad(point, outline)
+
+            # Keep track of the closest finger regardless of whether it's inside or outside
             if distance < min_distance:
                 min_distance = distance
-                result_finger = tip_idx + 1
+                closest_finger = tip_idx + 1
 
-        return result_hand, result_finger
+            # If the finger is inside the key area (distance < 0), add it to the list
+            if distance < 0:
+                result_fingers.append(tip_idx + 1)
+
+        # If no fingers are inside the key area, use the closest one
+        if not result_fingers and closest_finger is not None:
+            result_fingers = [closest_finger]
+
+        return result_hand, result_fingers
 
     def process_midi_event(self, event):
-        global current_notes, last_midi_result
         msg = event['message']
         if msg.type == 'note_on' and msg.velocity > 0:
-            hand, finger = self.closest_hand_and_finger(msg.note)
+            hand, finger = self.closest_hand_and_fingers(msg.note)
             note_properties = {
                 "velocity": msg.velocity,
                 "hand": hand,
