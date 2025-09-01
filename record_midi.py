@@ -1,19 +1,34 @@
 import os
 import time
-
+import argparse  # For command-line arguments
 import mido
+import sys
 
 
-midi_port_name = None
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Record MIDI messages from input port.")
+parser.add_argument(
+    "--port-index",
+    type=int,
+    default=0,
+    help="Index of the MIDI input port to use (default: 0)",
+)
+args = parser.parse_args()
 
-# Automatically select the first available MIDI input port
+# List available MIDI input ports
 available_ports = mido.get_input_names()
-if available_ports:
-    midi_port_name = available_ports[0]
-    print(f"record-midi.py: Using MIDI input: {midi_port_name}")
-else:
-    print("record-midi.py: No MIDI input ports available.")
-    exit()
+if not available_ports:
+    sys.exit(1)
+
+# Select MIDI port by index
+if args.port_index < 0 or args.port_index >= len(available_ports):
+    print(f"record-midi.py: Invalid port index {args.port_index}. Available ports:")
+    for i, port in enumerate(available_ports):
+        print(f"  [{i}] {port}")
+    sys.exit(1)
+
+midi_port_name = available_ports[args.port_index]
+print(f"record-midi.py: Using MIDI input: {midi_port_name}")
 
 output_dir = "recording/midi"
 os.makedirs(output_dir, exist_ok=True)

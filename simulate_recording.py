@@ -1,6 +1,7 @@
 import json
 import os
 import time
+import argparse  # For command-line arguments
 
 import cv2
 import mido
@@ -10,15 +11,32 @@ import draw_keys_3d
 import utils
 import osc_sender
 
+
 FAST_MODE = True  # No sleeping to speed up the simulation
 
-config = utils.get_config_for_file(__file__)
-osc_sender.configure(config["port_outgoing"])
-recording_base = config["path"]
-interactive_mode = config["interactive_mode"]
+parser = argparse.ArgumentParser(description="Simulate recording playback.")
+parser.add_argument(
+    "--port-out",
+    default=9876,
+    type=int,
+    help="OSC outgoing port (default: 9876)",
+)
+parser.add_argument(
+    "--recording",
+    type=str,
+    default="./recording",
+    help="Path of the recording",
+)
+args = parser.parse_args()
 
-video_path = os.path.join(recording_base, "video")
 
+osc_sender.configure(args.port_out)
+video_path = os.path.join(args.recording, "video")
+skip_to_next_note = {
+    "should_skip_to_next_note": False,
+    "note_received": False,
+    "should_skip_to_end": False,
+}
 draw_keys_3d.init()
 
 
@@ -108,10 +126,13 @@ def draw_text(img, instruction_text):
 
 
 def handle_keyboard_input(img):
-    global skip_to_next_note, interactive_mode
-    stop = interactive_mode and (
-        (not skip_to_next_note["active"])
-        or (skip_to_next_note["active"] and skip_to_next_note["note_received"])
+    global skip_to_next_note
+    stop = not skip_to_next_note["should_skip_to_end"] and (
+        (not skip_to_next_note["should_skip_to_next_note"])
+        or (
+            skip_to_next_note["should_skip_to_next_note"]
+            and skip_to_next_note["note_received"]
+        )
     )
     if stop:
         # Draw instructions directly on the image
@@ -123,10 +144,14 @@ def handle_keyboard_input(img):
             if key == ord("f"):
                 break
             if key == ord("n"):
-                skip_to_next_note = {"active": True, "note_received": False}
+                skip_to_next_note = {
+                    "should_skip_to_next_note": True,
+                    "note_received": False,
+                    "should_skip_to_end": False,
+                }
                 break
             elif key == ord("e"):
-                interactive_mode = False
+                skip_to_next_note["should_skip_to_end"] = True
                 break
             elif key == ord("q"):
                 print("Quitting simulation.")
@@ -147,9 +172,6 @@ def get_all_events(recording_base, video_path, parse_midi_mgs, parse_video):
     return all_events
 
 
-skip_to_next_note = {"active": False, "note_received": False}
-
-
 def process_midi(event):
     global skip_to_next_note
     print(f"{event['timestamp']}: {event['message']}")
@@ -157,7 +179,7 @@ def process_midi(event):
     res = hub.last_midi_result
     if hub.last_midi_result["msg.type"] == "note_on":
         print(res["hand"].capitalize(), res["finger"])
-        if skip_to_next_note["active"]:
+        if skip_to_next_note["should_skip_to_next_note"]:
             skip_to_next_note["note_received"] = True
 
 
@@ -211,7 +233,7 @@ def process_video_frame(event, video_processor):
 
 
 video_player = VideoPlayer(video_path)
-all_events = get_all_events(recording_base, video_path, parse_midi_msgs, parse_video)
+all_events = get_all_events(args.recording, video_path, parse_midi_msgs, parse_video)
 start_real = time.time()
 start_recording = all_events[0]["timestamp"]
 img = None

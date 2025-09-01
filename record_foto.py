@@ -3,18 +3,28 @@ import signal
 import sys
 import os
 import time
+import argparse  # Import argparse for command-line arguments
 
-import utils
 
+# Parse command-line arguments
+parser = argparse.ArgumentParser(description="Capture photos from camera.")
+parser.add_argument(
+    "--camera-index",
+    type=int,
+    default=0,
+    help="Index of the camera to use (default: 0)",
+)
+args = parser.parse_args()
 
-config = utils.get_config_for_file(__file__)
+# Use the camera index from the command-line argument
+camera_index = args.camera_index
 
 # Create output directory for frames
 output_dir = "recording/foto"
 os.makedirs(output_dir, exist_ok=True)
 
 # Open the webcam
-cap = cv2.VideoCapture(config.get("camera_index", 0))
+cap = cv2.VideoCapture(camera_index)
 if not cap.isOpened():
     print("Error: Could not open webcam.")
     sys.exit(1)
