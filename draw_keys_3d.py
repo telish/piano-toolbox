@@ -6,17 +6,19 @@ import numpy as np
 
 import utils
 import keyboard_geometry
-
+from calibrate_keyboard import CorrespondingPoints
 
 H = None  # Homography matrix
 
 
-def init(keypoint_mappings=None):
+def init(keypoint_mappings: list[CorrespondingPoints] = None):
     """
-    Initialize global calibration variables by performing 3D calibration. If no keypoint mappings are provided, it will load them from a file.
+    Initialize global calibration variables by performing 3D calibration. 
+    If no keypoint mappings are provided, it will load them from a file.
 
     Args:
-        keypoint_mappings (list): A list of dictionaries containing "pixel" and "object" keypoints.
+        keypoint_mappings (list): A list of dictionaries containing 
+            "pixel" and "object" keypoints.
     """
     global H
 
@@ -45,13 +47,15 @@ def init(keypoint_mappings=None):
     H, status = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
 
-def draw_polygon(img, points, color):
+def draw_polygon(
+    img: cv2.Mat, points: list[list[float]], color: tuple[int, int, int]
+) -> None:
     img_points = np.round(points).astype(np.int32)
     img_points = img_points.reshape((-1, 1, 2))
     cv2.polylines(img, [img_points], isClosed=True, color=color, thickness=1)
 
 
-def pixel_coordinates_of_key(midi_pitch):
+def pixel_coordinates_of_key(midi_pitch: int) -> np.ndarray:
     """Projects the 3D coordinates of a key onto the 2D image plane to get the pixel coordinates."""
     points = keyboard_geometry.key_points(midi_pitch)
     assert H is not None, "Homography matrix not initialized. Call init() first."
@@ -61,7 +65,7 @@ def pixel_coordinates_of_key(midi_pitch):
     return image_points
 
 
-def pixel_coordinates_of_bounding_box(midi_pitch):
+def pixel_coordinates_of_bounding_box(midi_pitch: int) -> np.ndarray:
     """Projects the 3D coordinates of a key's bounding box onto the 2D image plane to get the pixel coordinates."""
     points = keyboard_geometry.key_bounding_box(midi_pitch)
     assert H is not None, "Homography matrix not initialized. Call init() first."
@@ -71,20 +75,28 @@ def pixel_coordinates_of_bounding_box(midi_pitch):
     return image_points
 
 
-def draw_key(img, midi_pitch, color, annotation=""):
+def draw_key(
+    img: cv2.Mat, midi_pitch: int, color: tuple[int, int, int], annotation: str = ""
+) -> cv2.Mat:
     image_points = pixel_coordinates_of_key(midi_pitch)
     draw_polygon(img, image_points, color)
     draw_annotation(img, midi_pitch, color, annotation, image_points)
     return img
 
 
-def draw_keyboard(img, color):
+def draw_keyboard(img: cv2.Mat, color: tuple[int, int, int]) -> cv2.Mat:
     for midi_pitch in range(21, 109):
         draw_key(img, midi_pitch, color)
     return img
 
 
-def draw_annotation(img, midi_pitch, color, annotation, image_points):
+def draw_annotation(
+    img: cv2.Mat,
+    midi_pitch: int,
+    color: tuple[int, int, int],
+    annotation: str,
+    image_points: list[list[float]],
+) -> None:
     if annotation:
         if midi_pitch in keyboard_geometry.black_keys:
             y_offset = 30
@@ -125,7 +137,7 @@ def draw_annotation(img, midi_pitch, color, annotation, image_points):
         )
 
 
-def main():
+def main() -> None:
     init()
     image_path = utils.get_keyboard_image_path()
     img = cv2.imread(image_path)

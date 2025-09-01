@@ -3,7 +3,12 @@ import cv2
 import json
 
 
-def get_keyboard_image_path():
+def get_keyboard_image_path() -> str:
+    """Get the path to the keyboard image.
+
+    Returns:
+        str: The path to the keyboard image.
+    """
     # Load first PNG image from calibration/keyboard directory
     keyboard_dir = "calibration/keyboard"
     png_files = [f for f in os.listdir(keyboard_dir) if f.lower().endswith(".png")]
@@ -26,7 +31,7 @@ else:
     flip_vertical = orientation.get("flip_vertical", False)
 
 
-def flip_image(img):
+def flip_image(img: cv2.Mat) -> cv2.Mat:
     if flip_vertical:
         img = cv2.flip(img, 0)
     if flip_horizontal:
@@ -35,16 +40,16 @@ def flip_image(img):
 
 
 def add_text_to_image(
-    img,
-    text,
-    position="bottom-left",
-    padding=10,
-    font_scale=0.7,
-    thickness=2,
-    text_color=(255, 255, 255),
-    bg_color=(0, 0, 0),
-    max_text_width=None,
-):
+    img: cv2.Mat,
+    text: str,
+    position: str = "bottom-left",
+    padding: int = 10,
+    font_scale: float = 0.7,
+    thickness: int = 2,
+    text_color: tuple[int, int, int] = (255, 255, 255),
+    bg_color: tuple[int, int, int] = (0, 0, 0),
+    max_text_width: int = None,
+) -> cv2.Mat:
     """
     Add multiline text to an image with background, supporting both user-defined
     and automatic line breaks based on available width.

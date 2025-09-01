@@ -1,6 +1,7 @@
 import argparse
 import json
 import os
+from typing import Optional, TypedDict
 
 import cv2
 import numpy as np
@@ -10,7 +11,7 @@ import draw_keys_3d
 import keyboard_geometry
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Calibrate piano keyboard from video, image, or live camera feed"
     )
@@ -24,12 +25,17 @@ def parse_args():
     return parser.parse_args()
 
 
-user_defined_points = []
-dragging_index = -1  # Index of the currently dragged point
-drag_threshold = 10  # Minimum distance in pixels to select a point
+class CorrespondingPoints(TypedDict):
+    pixel: tuple[int, int]
+    object: Optional[tuple[float, float]]
 
 
-def draw_points(img, points):
+user_defined_points: list[CorrespondingPoints] = []
+dragging_index: int = -1  # Index of the currently dragged point
+drag_threshold: int = 10  # Minimum distance in pixels to select a point
+
+
+def draw_points(img: cv2.Mat, points: list[CorrespondingPoints]) -> None:
     for i, point in enumerate(points):
         p = point["pixel"]
         size = 5 if i == dragging_index else 3  # Larger point if being dragged
@@ -55,7 +61,7 @@ def draw_points(img, points):
         )
 
 
-def draw_trapezoid(img, points):
+def draw_trapezoid(img: cv2.Mat, points: list[CorrespondingPoints]) -> None:
     """Draw the trapezoid based on selected points."""
 
     if len(points) > 1:
@@ -130,7 +136,7 @@ def mouse_callback(event, x, y, flags, param):
         dragging_index = -1  # End dragging
 
 
-def save_coords():
+def save_coords() -> None:
     if len(user_defined_points) >= 4:
         output_dir = "calibration/keyboard/"
         os.makedirs(output_dir, exist_ok=True)
@@ -145,14 +151,14 @@ def save_coords():
         print(f"Coordinates saved in {output_dir}keyboard_geometry.json")
 
 
-def add_object_coords(points):
+def add_object_coords(points: list[CorrespondingPoints]) -> None:
     for i, p in enumerate(points):
         if p["object"] is None:
             object_coords = find_closest_point(p)
             p["object"] = object_coords
 
 
-def main():
+def main() -> None:
     global user_defined_points
 
     cap = None

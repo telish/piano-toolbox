@@ -35,6 +35,14 @@ class AnalysisHub:
         self.last_image_output = None
 
     def closest_hand_and_fingers(self, midi_pitch):
+        """Find the closest hand and fingers to the given MIDI pitch.
+
+        Args:
+            midi_pitch (int): The MIDI pitch to check against.
+
+        Returns:
+            tuple: (hand (str), fingers (list of int)). 'hand' is either "left" or "right", and 'fingers' is a list of finger indices (1=thumb, 2=index, ..., 5=pinky) closest to or inside
+        """
         # Get the outline of the midi pitch and compare the x position of the hands with the outline
         # Return which one is closer to the outline
         if self.last_mp_result["left_visible"]:

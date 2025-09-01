@@ -1,17 +1,16 @@
 import utils
+import os
+import json
 
 # Based on: https://upload.wikimedia.org/wikipedia/commons/4/48/Pianoteilung.svg
 # Article: https://de.wikipedia.org/wiki/Klaviatur
 
 
-def load_black_height():
+def load_black_height() -> float:
     """
     Load the black key height from the keyboard_geometry.json file.
     If the file doesn't exist or doesn't contain black_height, use the default value.
     """
-    import os
-    import json
-
     json_path = "calibration/keyboard/keyboard_geometry.json"
     if os.path.exists(json_path):
         try:
@@ -46,7 +45,7 @@ KEYBOARD_WIDTH = 52 * WHITE_BOTTOM_WIDTH
 WHITE_HEIGHT = 145.0
 
 # fmt:off
-white_keys = [
+white_keys: list[int] = [
     21, 23, 24, 26, 28, 29, 31,  # lowest octave
     33, 35, 36, 38, 40, 41, 43,  # second octave
     45, 47, 48, 50, 52, 53, 55,  # third octave
@@ -57,7 +56,7 @@ white_keys = [
     105, 107, 108  # highest octave
 ]
 # fmt:on
-black_keys = [key for key in range(21, 108) if key not in white_keys]
+black_keys: list[int] = [key for key in range(21, 108) if key not in white_keys]
 
 keyboard_outline = {
     "top-left": [0, 0],
@@ -67,13 +66,13 @@ keyboard_outline = {
 }
 
 
-def pitch_class(midi_pitch):
+def pitch_class(midi_pitch: int) -> str:
     c = midi_pitch % 12
     pitch_classes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     return pitch_classes[c]
 
 
-def re_init():
+def re_init() -> None:
     global left_at_bottom, left_at_top, right_at_bottom, right_at_top
     left_at_top = [0]
     for pitch in range(21, 108):
@@ -152,7 +151,7 @@ def re_init():
     assert len(right_at_bottom) == 88
 
 
-def key_points(midi_pitch):
+def key_points(midi_pitch: int) -> list[list[float]]:
     idx = midi_pitch - 21
     if midi_pitch in white_keys:
         return [
@@ -174,7 +173,7 @@ def key_points(midi_pitch):
         ]
 
 
-def key_bounding_box(midi_pitch):
+def key_bounding_box(midi_pitch: int) -> list[list[float]]:
     if midi_pitch not in white_keys:
         return key_points(midi_pitch)
     else:

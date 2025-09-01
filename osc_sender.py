@@ -1,16 +1,16 @@
 from pythonosc.udp_client import SimpleUDPClient
 
-osc_port = None
-osc_client = None
+osc_port: int = None
+osc_client: SimpleUDPClient = None
 
 
-def configure(port):
+def configure(port: int):
     global osc_port, osc_client
     osc_port = port
     osc_client = SimpleUDPClient("127.0.0.1", osc_port)
 
 
-def send_message(address, *args):
+def send_message(address: str, *args):
     global osc_client
     assert (
         osc_client is not None

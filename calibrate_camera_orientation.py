@@ -5,7 +5,7 @@ import cv2
 import utils
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description="Calibrate camera orientation from video, image, or live camera feed"
     )
@@ -20,7 +20,7 @@ flip_horizontal = False
 flip_vertical = False
 
 
-def save_orientation():
+def save_orientation() -> None:
     print("Saving camera orientation to calibration/camera_orientation.json")
     output_dir = "calibration/"
     os.makedirs(output_dir, exist_ok=True)
@@ -30,7 +30,7 @@ def save_orientation():
         )
 
 
-def main():
+def main() -> None:
     global flip_horizontal, flip_vertical
 
     args = parse_args()

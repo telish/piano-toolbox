@@ -3,7 +3,7 @@ import json
 import matplotlib.pyplot as plt
 
 
-def parse_timestamps(json_path):
+def parse_timestamps(json_path: str) -> list[dict]:
     """
     Liest die Timestamps aus der JSON-Datei.
     """
@@ -11,7 +11,7 @@ def parse_timestamps(json_path):
         return json.load(f)
 
 
-def plot_inter_frame_intervals(data, bins=50):
+def plot_inter_frame_intervals(data: list[dict], bins: int = 50):
     """
     Berechnet die Zeitintervalle zwischen Frames und zeigt ein Histogramm.
 
