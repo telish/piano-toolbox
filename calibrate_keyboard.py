@@ -1,7 +1,7 @@
 import argparse
 import json
 import os
-from typing import Optional, TypedDict, Any
+from typing import Optional, Any
 
 import cv2
 import numpy.typing as npt
@@ -9,26 +9,28 @@ import numpy as np
 
 import utils
 import draw_keys_3d
+from draw_keys_3d import CorrespondingPoints
 import keyboard_geometry
 
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(
-        description="Calibrate piano keyboard from video, image, or live camera feed"
+        description="Calibrate keyboard geometry from recording or live camera feed"
     )
-
-    # Create mutually exclusive group for input sources
-    input_group = parser.add_mutually_exclusive_group(required=False)
+    input_group = parser.add_mutually_exclusive_group(
+        required=False
+    )  # Changed to False
     input_group.add_argument("--recording", type=str, help="Path to a recording")
-    input_group.add_argument("--image", type=str, help="Path to image file")
-    input_group.add_argument("--live", type=int, help="Camera index for live feed")
+    input_group.add_argument(
+        "--live", type=int, help="Camera index for live feed (default: 0)"
+    )
+    args = parser.parse_args()
 
-    return parser.parse_args()
+    # If neither recording nor live is specified, default to live with index 0
+    if args.recording is None and args.live is None:
+        args.live = 0
 
-
-class CorrespondingPoints(TypedDict):
-    pixel: tuple[int, int]
-    object: Optional[tuple[float, float]]
+    return args
 
 
 user_defined_points: list[CorrespondingPoints] = []
@@ -139,19 +141,22 @@ def mouse_callback(event: int, x: int, y: int, flags: int, param: Any):
         dragging_index = -1  # End dragging
 
 
-def save_coords() -> None:
+def save_coords(image: npt.NDArray[Any]) -> None:
     if len(user_defined_points) >= 4:
-        output_dir = "calibration/keyboard/"
-        os.makedirs(output_dir, exist_ok=True)
+        file_path = utils.get_keyboard_geometry_file_path()
+        assert file_path
+        os.makedirs(os.path.dirname(file_path), exist_ok=True)
         add_object_coords(user_defined_points)
         result = {
             "keypoint_mappings": user_defined_points,
             "black_height": keyboard_geometry.black_height,
         }
-
-        with open(os.path.join(output_dir, "keyboard_geometry.json"), "w") as f:
+        with open(file_path, "w") as f:
             json.dump(result, f, indent=4)
-        print(f"Coordinates saved in {output_dir}keyboard_geometry.json")
+        print(f"Coordinates saved in {file_path}")
+
+        cv2.imwrite(utils.get_keyboard_image_file_path(), image)
+        print(f"Image saved in {utils.get_keyboard_image_file_path()}")
 
 
 def add_object_coords(points: list[CorrespondingPoints]) -> None:
@@ -170,7 +175,10 @@ def main() -> None:
     print(args)
 
     if args.recording:
-        video_path = os.path.join(args.recording, "video", "recording.avi")
+        video_path = os.path.join(
+            os.path.abspath(args.recording), "video", "recording.avi"
+        )
+        utils.set_calibration_base_dir(os.path.abspath(args.recording))
         # Open video and read first frame
         c = cv2.VideoCapture(video_path)
         if not c.isOpened():
@@ -178,17 +186,10 @@ def main() -> None:
         ret, image = c.read()
         if not ret:
             raise ValueError(f"Could not read frame from video: {video_path}")
-    elif args.image:
-        image = cv2.imread(args.image)
-        if image is None:
-            raise ValueError(f"Could not load image file: {args.image}")
     elif args.live is not None:
         cap = cv2.VideoCapture(args.live)
         if not cap.isOpened():
             raise ValueError(f"Could not open camera: {args.live}")
-    else:
-        image_path = utils.get_keyboard_image_path()
-        image = cv2.imread(image_path)
     assert image is not None
 
     cv2.namedWindow("Draw Keyboard")
@@ -239,7 +240,7 @@ def main() -> None:
         key = cv2.waitKey(1) & 0xFF
 
         if key == ord("q"):  # Save and quit
-            save_coords()
+            save_coords(image)
             break
         elif key == ord("+") or key == ord("="):  # Increase black key length
             keyboard_geometry.black_height = keyboard_geometry.black_height + 0.5

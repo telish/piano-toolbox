@@ -12,34 +12,6 @@ import utils
 import osc_sender
 
 
-FAST_MODE = True  # No sleeping to speed up the simulation
-
-parser = argparse.ArgumentParser(description="Simulate recording playback.")
-parser.add_argument(
-    "--port-out",
-    default=9876,
-    type=int,
-    help="OSC outgoing port (default: 9876)",
-)
-parser.add_argument(
-    "--recording",
-    type=str,
-    default="./recording",
-    help="Path of the recording",
-)
-args = parser.parse_args()
-
-
-osc_sender.configure(args.port_out)
-video_path = os.path.join(args.recording, "video")
-skip_to_next_note = {
-    "should_skip_to_next_note": False,
-    "note_received": False,
-    "should_skip_to_end": False,
-}
-draw_keys_3d.init()
-
-
 def parse_midi_msgs(filename):
     """Parse MIDI messages from file. Returns empty list if file doesn't exist."""
     result = []
@@ -161,9 +133,9 @@ def handle_keyboard_input(img):
         cv2.waitKey(1)  # Just to update the window without blocking
 
 
-def get_all_events(recording_base, video_path, parse_midi_mgs, parse_video):
-    midi_events = parse_midi_mgs(os.path.join(recording_base, "midi/midi_msg.txt"))
-    video_events = parse_video(video_path)
+def get_all_events(recording_base):
+    midi_events = parse_midi_msgs(os.path.join(recording_base, "midi/midi_msg.txt"))
+    video_events = parse_video(os.path.join(args.recording, "video"))
 
     # Combine and sort events by timestamp
     all_events = midi_events + video_events
@@ -185,6 +157,7 @@ def process_midi(event):
 
 class VideoPlayer:
     def __init__(self, video_path):
+        video_path = os.path.join(args.recording, "video")
         self.video_path = video_path
         self.video_capture = None
 
@@ -234,18 +207,44 @@ def process_video_frame(event, video_processor):
     handle_keyboard_input(img)
 
 
-video_player = VideoPlayer(video_path)
-all_events = get_all_events(args.recording, video_path, parse_midi_msgs, parse_video)
+parser = argparse.ArgumentParser(description="Simulate recording playback.")
+parser.add_argument(
+    "--port-out",
+    default=9876,
+    type=int,
+    help="OSC outgoing port (default: 9876)",
+)
+parser.add_argument(
+    "--recording",
+    type=str,
+    default="./recording",
+    help="Path of the recording",
+)
+args = parser.parse_args()
+
+if os.path.exists(os.path.join(args.recording, "calibration")):
+    utils.set_calibration_base_dir(args.recording)
+osc_sender.configure(args.port_out)
+draw_keys_3d.init()
+
+
+skip_to_next_note = {
+    "should_skip_to_next_note": False,
+    "note_received": False,
+    "should_skip_to_end": False,
+}
+
+video_player = VideoPlayer(args.recording)
+all_events = get_all_events(args.recording)
 start_real = time.time()
 start_recording = all_events[0]["timestamp"]
 img = None
 for event in all_events:
     # Wait until the event's timestamp is reached
-    time_to_sleep = event["timestamp"] - start_recording - (time.time() - start_real)
-    if time_to_sleep < 0:  # Make sure time to sleep is not negative.
-        time_to_sleep = 0
-    if not FAST_MODE:
-        time.sleep(time_to_sleep)
+    # time_to_sleep = event["timestamp"] - start_recording - (time.time() - start_real)
+    # if time_to_sleep < 0:  # Make sure time to sleep is not negative.
+    #     time_to_sleep = 0
+    # time.sleep(time_to_sleep)
 
     if event["type"] == "midi":
         process_midi(event)

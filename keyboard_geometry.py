@@ -14,8 +14,8 @@ def load_black_height() -> float:
     Load the black key height from the keyboard_geometry.json file.
     If the file doesn't exist or doesn't contain black_height, use the default value.
     """
-    json_path = "calibration/keyboard/keyboard_geometry.json"
-    if os.path.exists(json_path):
+    json_path = utils.get_keyboard_geometry_file_path()
+    if json_path and os.path.exists(json_path):
         try:
             with open(json_path, "r") as f:
                 data = json.load(f)
@@ -198,10 +198,9 @@ if __name__ == "__main__":
     import numpy as np
     import utils
 
-    # Use the keyboard path from utils instead of hardcoded path
-    image_path = utils.get_keyboard_image_path()
-    img = cv2.imread(image_path)
-    img = utils.flip_image(img)
+    img_height = 1080
+    img_width = 1920
+    img = np.ones((img_height, img_width, 3), dtype=np.uint8) * 255  # White background
 
     # Draw keys and labels
     for i, pitch in enumerate(range(21, 109)):

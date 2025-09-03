@@ -5,32 +5,51 @@ from typing import Any, Optional
 
 import numpy.typing as npt
 
-def get_keyboard_image_path() -> str:
+
+_calibration_base_dir = os.path.dirname(os.path.abspath(__file__))
+
+
+def set_calibration_base_dir(dir: str) -> None:
+    global _calibration_base_dir
+    _calibration_base_dir = dir
+    load_flip_settings()
+
+
+def get_keyboard_image_file_path() -> str:
     """Get the path to the keyboard image.
 
     Returns:
         str: The path to the keyboard image.
     """
-    # Load first PNG image from calibration/keyboard directory
-    keyboard_dir = "calibration/keyboard"
-    png_files = [f for f in os.listdir(keyboard_dir) if f.lower().endswith(".png")]
-    if not png_files:
-        print("Error: No PNG files found in calibration/keyboard!")
-        exit()
-    image_path = os.path.join(keyboard_dir, sorted(png_files)[0])
-    return image_path
+    return os.path.join(_calibration_base_dir, "calibration", "keyboard", "foto.png")
 
 
-# Load flip settings from calibration/camera_orientation.json
-orientation_path = "calibration/camera_orientation.json"
-if not os.path.exists(orientation_path):
-    flip_horizontal = False
-    flip_vertical = False
-else:
-    with open(orientation_path, "r") as f:
-        orientation = json.load(f)
-    flip_horizontal = orientation.get("flip_horizontal", False)
-    flip_vertical = orientation.get("flip_vertical", False)
+def get_keyboard_geometry_file_path() -> str:
+    return os.path.join(
+        _calibration_base_dir, "calibration", "keyboard", "keyboard_geometry.json"
+    )
+
+
+def retrieve_camera_orientation_file_path() -> str:
+    return os.path.join(_calibration_base_dir, "calibration", "camera_orientation.json")
+
+
+flip_horizontal, flip_vertical = False, False
+
+
+def load_flip_settings():
+    global flip_vertical, flip_horizontal
+    json_path = os.path.join(
+        _calibration_base_dir, "calibration", "camera_orientation.json"
+    )
+    if os.path.exists(json_path):
+        with open(json_path, "r") as f:
+            orientation = json.load(f)
+        flip_horizontal = orientation.get("flip_horizontal", False)
+        flip_vertical = orientation.get("flip_vertical", False)
+
+
+load_flip_settings()
 
 
 def flip_image(img: npt.NDArray[Any]) -> npt.NDArray[Any]:

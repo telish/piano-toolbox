@@ -108,13 +108,14 @@ hands = mp.solutions.hands.Hands(
 
 
 if __name__ == "__main__":
-    cap = cv2.VideoCapture(0)  # 0 for Laptop camera. 1 for Elgato
+    cap = cv2.VideoCapture(0)
+    osc_sender.configure(9876)
 
     while cap.isOpened():
         ret, img = cap.read()
         if not ret:
             break
-        analyze_frame(img)
+        analyze_frame(img, img)
         cv2.imshow("Hand Tracking", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):  # Press 'q' to exit the video feed
             break

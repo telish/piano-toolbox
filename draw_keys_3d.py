@@ -1,6 +1,6 @@
 import json
 import os
-from typing import Any, Optional
+from typing import Any, Optional, TypedDict
 
 import cv2
 import numpy as np
@@ -8,9 +8,14 @@ import numpy.typing as npt
 
 import utils
 import keyboard_geometry
-from calibrate_keyboard import CorrespondingPoints
+
 
 homography_matrix = None  # Homography matrix
+
+
+class CorrespondingPoints(TypedDict):
+    pixel: tuple[int, int]
+    object: Optional[tuple[float, float]]
 
 
 def init(keypoint_mappings: Optional[list[CorrespondingPoints]] = None):
@@ -25,12 +30,8 @@ def init(keypoint_mappings: Optional[list[CorrespondingPoints]] = None):
     global homography_matrix
 
     if keypoint_mappings is None:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        json_path = os.path.join(
-            script_dir, "calibration", "keyboard", "keyboard_geometry.json"
-        )
-        if not os.path.exists(json_path):
-            raise FileNotFoundError(f"Calibration file not found: {json_path}")
+        json_path = utils.get_keyboard_geometry_file_path()
+        assert json_path
         with open(json_path, "r") as file:
             keypoint_mappings = json.load(file)["keypoint_mappings"]
 
@@ -154,7 +155,7 @@ def draw_annotation(
 
 def main() -> None:
     init()
-    image_path = utils.get_keyboard_image_path()
+    image_path = utils.get_keyboard_image_file_path()
     img = cv2.imread(image_path)
     if img is None:
         raise FileNotFoundError(f"Image not found or unable to load: {image_path}")

@@ -51,6 +51,7 @@ class AnalysisHub:
 
         # Get the outline of the midi pitch and compare the x position of the hands with the outline
         # Return which one is closer to the outline
+        left_x, right_x = None, None
         if self.last_mp_result["left_visible"]:
             left_x_coords = self.last_mp_result["left_landmarks_xyz"][0]
             left_x = max(left_x_coords) * track_hands.image_width_px
@@ -58,7 +59,6 @@ class AnalysisHub:
             right_x_coords = self.last_mp_result["right_landmarks_xyz"][0]
             right_x = min(right_x_coords) * track_hands.image_width_px
 
-        left_x, right_x = None, None
         if (
             not self.last_mp_result["left_visible"]
             and not self.last_mp_result["right_visible"]

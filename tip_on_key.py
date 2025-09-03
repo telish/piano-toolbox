@@ -155,7 +155,7 @@ def test_interactive():
     draw_keys_3d.init()
 
     # Load image
-    img_path = utils.get_keyboard_image_path()
+    img_path = utils.get_keyboard_image_file_path()
     img = cv2.imread(img_path)
     if img is None:
         print(f"Could not load image: {img_path}")
