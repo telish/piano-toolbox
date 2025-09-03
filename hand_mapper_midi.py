@@ -1,3 +1,4 @@
+# type: ignore
 """Kalman filter based hand mapping."""
 
 from collections import namedtuple

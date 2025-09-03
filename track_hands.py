@@ -1,7 +1,7 @@
+# type: ignore[attr-defined]
 import cv2
 import mediapipe as mp
 
-import utils
 import osc_sender
 
 MP_THUMB_TIP = 4
@@ -111,10 +111,10 @@ if __name__ == "__main__":
     cap = cv2.VideoCapture(0)  # 0 for Laptop camera. 1 for Elgato
 
     while cap.isOpened():
-        ret, frame = cap.read()
+        ret, img = cap.read()
         if not ret:
             break
-        img, _ = analyze_frame(frame)
+        analyze_frame(img)
         cv2.imshow("Hand Tracking", img)
         if cv2.waitKey(1) & 0xFF == ord("q"):  # Press 'q' to exit the video feed
             break

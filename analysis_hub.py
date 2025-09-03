@@ -1,4 +1,7 @@
+from typing import Any, Optional
+
 import numpy as np
+import numpy.typing as npt
 from shapely.geometry import Point, Polygon
 
 import track_hands
@@ -7,7 +10,7 @@ import osc_sender
 import tip_on_key
 
 
-def _point_distance_to_quad(point, quad):
+def _point_distance_to_quad(point: tuple[int, int], quad: npt.NDArray[Any]) -> float:
     """
     point: tuple (x, y)
     quad: numpy array with shape (4, 1, 2)
@@ -29,12 +32,12 @@ def _point_distance_to_quad(point, quad):
 
 class AnalysisHub:
     def __init__(self):
-        self.last_midi_result = None
+        self.last_midi_result = {}
         self.current_notes = {}
-        self.last_mp_result = None
-        self.last_image_output = None
+        self.last_mp_result = {}
+        self.last_image_output: Optional[npt.NDArray[Any]] = None
 
-    def closest_hand_and_fingers(self, midi_pitch):
+    def closest_hand_and_fingers(self, midi_pitch: int) -> tuple[str, list[int]]:
         """Find the closest hand and fingers to the given MIDI pitch.
 
         Args:
@@ -43,6 +46,9 @@ class AnalysisHub:
         Returns:
             tuple: (hand (str), fingers (list of int)). 'hand' is either "left" or "right", and 'fingers' is a list of finger indices (1=thumb, 2=index, ..., 5=pinky) closest to or inside
         """
+
+        outline = draw_keys_3d.pixel_coordinates_of_key(midi_pitch)
+
         # Get the outline of the midi pitch and compare the x position of the hands with the outline
         # Return which one is closer to the outline
         if self.last_mp_result["left_visible"]:
@@ -52,17 +58,18 @@ class AnalysisHub:
             right_x_coords = self.last_mp_result["right_landmarks_xyz"][0]
             right_x = min(right_x_coords) * track_hands.image_width_px
 
+        left_x, right_x = None, None
         if (
             not self.last_mp_result["left_visible"]
             and not self.last_mp_result["right_visible"]
         ):
-            return None, None
+            return "", []
         elif not self.last_mp_result["left_visible"]:
             result_hand = "right"
         elif not self.last_mp_result["right_visible"]:
             result_hand = "left"
         else:
-            outline = draw_keys_3d.pixel_coordinates_of_key(midi_pitch)
+            assert left_x is not None and right_x is not None
             key_mean_x = np.mean(outline[:, :, 0])
             left_dist = abs(left_x - key_mean_x)
             right_dist = abs(right_x - key_mean_x)
@@ -104,7 +111,7 @@ class AnalysisHub:
 
         return result_hand, result_fingers
 
-    def process_midi_event(self, event):
+    def process_midi_event(self, event: dict):
         msg = event["message"]
         if msg.type == "note_on" and msg.velocity > 0:
             hand, finger = self.closest_hand_and_fingers(msg.note)
@@ -123,7 +130,7 @@ class AnalysisHub:
                 "velocity": msg.velocity,
             }
 
-    def process_frame(self, img):
+    def process_frame(self, img: npt.NDArray[Any]):
         self.last_image_output = img.copy()
         self.last_mp_result = track_hands.analyze_frame(
             img_input=img, img_output=self.last_image_output

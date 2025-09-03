@@ -1,6 +1,9 @@
+from typing import Final
+
 import utils
 import os
 import json
+
 
 # Based on: https://upload.wikimedia.org/wikipedia/commons/4/48/Pianoteilung.svg
 # Article: https://de.wikipedia.org/wiki/Klaviatur
@@ -30,22 +33,22 @@ black_height = (
     load_black_height()
 )  # Whenever you change this value you have to re_init()
 
-BLACK_WIDTH = 12.7
-C_TOP_WIDTH = 15.05
-D_TOP_WIDTH = 15.3
-E_TOP_WIDTH = 15.05
-F_TOP_WIDTH = 13.95
-G_TOP_WIDTH = 14.2
-A_TOP_WIDTH = 14.2
-B_TOP_WIDTH = 13.95
-LOWER_A_TOP_WIDTH = A_TOP_WIDTH + BLACK_WIDTH / 2.0
-WHITE_BOTTOM_WIDTH = 23.6
+BLACK_WIDTH: Final[float] = 12.7
+C_TOP_WIDTH: Final[float] = 15.05
+D_TOP_WIDTH: Final[float] = 15.3
+E_TOP_WIDTH: Final[float] = 15.05
+F_TOP_WIDTH: Final[float] = 13.95
+G_TOP_WIDTH: Final[float] = 14.2
+A_TOP_WIDTH: Final[float] = 14.2
+B_TOP_WIDTH: Final[float] = 13.95
+LOWER_A_TOP_WIDTH: Final[float] = A_TOP_WIDTH + BLACK_WIDTH / 2.0
+WHITE_BOTTOM_WIDTH: Final[float] = 23.6
 
-KEYBOARD_WIDTH = 52 * WHITE_BOTTOM_WIDTH
-WHITE_HEIGHT = 145.0
+KEYBOARD_WIDTH: Final[float] = 52.0 * WHITE_BOTTOM_WIDTH
+WHITE_HEIGHT: Final[float] = 145.0
 
 # fmt:off
-white_keys: list[int] = [
+white_keys: Final[list[int]] = [
     21, 23, 24, 26, 28, 29, 31,  # lowest octave
     33, 35, 36, 38, 40, 41, 43,  # second octave
     45, 47, 48, 50, 52, 53, 55,  # third octave
@@ -56,13 +59,13 @@ white_keys: list[int] = [
     105, 107, 108  # highest octave
 ]
 # fmt:on
-black_keys: list[int] = [key for key in range(21, 108) if key not in white_keys]
+black_keys: Final[list[int]] = [key for key in range(21, 108) if key not in white_keys]
 
-keyboard_outline = {
-    "top-left": [0, 0],
-    "top-right": [KEYBOARD_WIDTH, 0],
-    "bottom-right": [KEYBOARD_WIDTH, WHITE_HEIGHT],
-    "bottom-left": [0, WHITE_HEIGHT],
+keyboard_outline: Final[dict[str, tuple[float, float]]] = {
+    "top-left": (0.0, 0.0),
+    "top-right": (KEYBOARD_WIDTH, 0.0),
+    "bottom-right": (KEYBOARD_WIDTH, WHITE_HEIGHT),
+    "bottom-left": (0.0, WHITE_HEIGHT),
 }
 
 
@@ -74,7 +77,7 @@ def pitch_class(midi_pitch: int) -> str:
 
 def re_init() -> None:
     global left_at_bottom, left_at_top, right_at_bottom, right_at_top
-    left_at_top = [0]
+    left_at_top = [0.0]
     for pitch in range(21, 108):
         if pitch == 21:
             left_at_top.append(left_at_top[-1] + LOWER_A_TOP_WIDTH)
@@ -151,29 +154,29 @@ def re_init() -> None:
     assert len(right_at_bottom) == 88
 
 
-def key_points(midi_pitch: int) -> list[list[float]]:
+def key_points(midi_pitch: int) -> list[tuple[float, float]]:
     idx = midi_pitch - 21
     if midi_pitch in white_keys:
         return [
-            [left_at_top[idx], 0],  # top-left
-            [left_at_top[idx], black_height],  # left-middle 1/2
-            [left_at_bottom[idx], black_height],  # left-middle 2/2
-            [left_at_bottom[idx], WHITE_HEIGHT],  # bottom-left
-            [right_at_bottom[idx], WHITE_HEIGHT],  # bottom-right
-            [right_at_bottom[idx], black_height],  # right-middle 1/2
-            [right_at_top[idx], black_height],  # right-middle 2/2
-            [right_at_top[idx], 0],  # top-right
+            (left_at_top[idx], 0),  # top-left
+            (left_at_top[idx], black_height),  # left-middle 1/2
+            (left_at_bottom[idx], black_height),  # left-middle 2/2
+            (left_at_bottom[idx], WHITE_HEIGHT),  # bottom-left
+            (right_at_bottom[idx], WHITE_HEIGHT),  # bottom-right
+            (right_at_bottom[idx], black_height),  # right-middle 1/2
+            (right_at_top[idx], black_height),  # right-middle 2/2
+            (right_at_top[idx], 0),  # top-right
         ]
     else:
         return [
-            [left_at_top[idx], 0],  # top-left
-            [left_at_top[idx], black_height],  # left-middle
-            [right_at_top[idx], black_height],  # right-middle
-            [right_at_top[idx], 0],  # top-right
+            (left_at_top[idx], 0),  # top-left
+            (left_at_top[idx], black_height),  # left-middle
+            (right_at_top[idx], black_height),  # right-middle
+            (right_at_top[idx], 0),  # top-right
         ]
 
 
-def key_bounding_box(midi_pitch: int) -> list[list[float]]:
+def key_bounding_box(midi_pitch: int) -> list[tuple[float, float]]:
     if midi_pitch not in white_keys:
         return key_points(midi_pitch)
     else:
@@ -181,10 +184,10 @@ def key_bounding_box(midi_pitch: int) -> list[list[float]]:
         left = idx * WHITE_BOTTOM_WIDTH
         right = left + WHITE_BOTTOM_WIDTH
         return [
-            [left, 0],  # top-left
-            [left, WHITE_HEIGHT],  # bottom-left
-            [right, WHITE_HEIGHT],  # bottom-right
-            [right, 0],  # top-right
+            (left, 0),  # top-left
+            (left, WHITE_HEIGHT),  # bottom-left
+            (right, WHITE_HEIGHT),  # bottom-right
+            (right, 0),  # top-right
         ]
 
 
@@ -203,9 +206,11 @@ if __name__ == "__main__":
     # Draw keys and labels
     for i, pitch in enumerate(range(21, 109)):
         # Get points and add y-offset
-        key_pts = np.array([key_points(pitch)], dtype=np.int32)
+        key_pts = np.array([key_points(pitch)], dtype=np.int32).reshape(
+            -1, 1, 2
+        )  # key_pts.shape = (n, 1, 2)
 
-        cv2.polylines(img, key_pts, isClosed=True, color=(0, 200, 0), thickness=2)
+        cv2.polylines(img, [key_pts], isClosed=True, color=(0, 200, 0), thickness=2)
 
         # Also shift text
         cv2.putText(
@@ -219,10 +224,12 @@ if __name__ == "__main__":
         )
 
         # Also shift bounding box
-        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32)
-        box_pts[0, :, 1] += int(WHITE_HEIGHT + 2)
+        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32).reshape(
+            -1, 1, 2
+        )  # key_pts.shape = (n, 1, 2)
+        box_pts[:, 0, 1] += int(WHITE_HEIGHT + 2)
 
-        cv2.polylines(img, box_pts, isClosed=True, color=(200, 0, 0), thickness=2)
+        cv2.polylines(img, [box_pts], isClosed=True, color=(200, 0, 0), thickness=2)
 
     cv2.imshow("Keyboard Geometry", img)
     cv2.waitKey(0)

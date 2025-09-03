@@ -1,9 +1,10 @@
 import argparse
 import json
 import os
-from typing import Optional, TypedDict
+from typing import Optional, TypedDict, Any
 
 import cv2
+import numpy.typing as npt
 import numpy as np
 
 import utils
@@ -35,7 +36,7 @@ dragging_index: int = -1  # Index of the currently dragged point
 drag_threshold: int = 10  # Minimum distance in pixels to select a point
 
 
-def draw_points(img: cv2.Mat, points: list[CorrespondingPoints]) -> None:
+def draw_points(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> None:
     for i, point in enumerate(points):
         p = point["pixel"]
         size = 5 if i == dragging_index else 3  # Larger point if being dragged
@@ -61,7 +62,7 @@ def draw_points(img: cv2.Mat, points: list[CorrespondingPoints]) -> None:
         )
 
 
-def draw_trapezoid(img: cv2.Mat, points: list[CorrespondingPoints]) -> None:
+def draw_trapezoid(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> None:
     """Draw the trapezoid based on selected points."""
 
     if len(points) > 1:
@@ -93,7 +94,9 @@ def draw_trapezoid(img: cv2.Mat, points: list[CorrespondingPoints]) -> None:
             )
 
 
-def find_closest_point_index(x, y, points, max_distance=20):
+def find_closest_point_index(
+    x, y, points: list[tuple[int, int]], max_distance: int = 20
+):
     """Find the index of the closest point to position (x,y)."""
     if not points:
         return -1
@@ -110,7 +113,7 @@ def find_closest_point_index(x, y, points, max_distance=20):
     return closest_idx
 
 
-def mouse_callback(event, x, y, flags, param):
+def mouse_callback(event: int, x: int, y: int, flags: int, param: Any):
     global user_defined_points, dragging_index
 
     if event == cv2.EVENT_LBUTTONDOWN:
@@ -162,7 +165,7 @@ def main() -> None:
     global user_defined_points
 
     cap = None
-    image = None
+    image: Optional[npt.NDArray[Any]] = None
     args = parse_args()
     print(args)
 
@@ -186,6 +189,7 @@ def main() -> None:
     else:
         image_path = utils.get_keyboard_image_path()
         image = cv2.imread(image_path)
+    assert image is not None
 
     cv2.namedWindow("Draw Keyboard")
 
@@ -248,11 +252,8 @@ def main() -> None:
 
 
 def find_closest_point(pt):
-    closest = None
     min_distance = float("inf")
-    closest_pitch = None
-    closest_index = None  # Add index tracking
-
+    closest_pitch, closest_index = None, None
     for pitch in range(21, 109):
         key_pts = draw_keys_3d.pixel_coordinates_of_key(pitch)
         # Find the closest point in this key's points
@@ -263,6 +264,9 @@ def find_closest_point(pt):
                 closest = key_pt
                 closest_pitch = pitch
                 closest_index = idx  # Store the index
+    assert (
+        closest_pitch is not None and closest_index is not None
+    ), f"Could not find closest pitch for point {pt}"
 
     object_coords = keyboard_geometry.key_points(closest_pitch)[closest_index]
     # print(f"Closest point to {pt} is {closest} (index {closest_index}) on key {closest_pitch} (distance: {min_distance:.2f}). Object coordinates of that point: {object_coords}")
@@ -270,7 +274,7 @@ def find_closest_point(pt):
     return object_coords
 
 
-def get_correspondences_without_projection(points):
+def get_correspondences_without_projection(points: list[CorrespondingPoints]):
     assert len(points) == 4, "Exactly 4 points are required."
 
     sorted_by_y = sorted(points, key=lambda p: p["pixel"][1])

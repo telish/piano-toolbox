@@ -1,7 +1,7 @@
 from pythonosc.udp_client import SimpleUDPClient
 
-osc_port: int = None
-osc_client: SimpleUDPClient = None
+osc_port: int
+osc_client: SimpleUDPClient
 
 
 def configure(port: int):
@@ -12,8 +12,4 @@ def configure(port: int):
 
 def send_message(address: str, *args):
     global osc_client
-    assert (
-        osc_client is not None
-    ), "OSC client is not configured. Call configure() first."
-    if osc_client is not None:
-        osc_client.send_message(address, args)
+    osc_client.send_message(address, args)

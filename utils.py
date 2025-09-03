@@ -1,7 +1,9 @@
 import os
 import cv2
 import json
+from typing import Any, Optional
 
+import numpy.typing as npt
 
 def get_keyboard_image_path() -> str:
     """Get the path to the keyboard image.
@@ -31,7 +33,7 @@ else:
     flip_vertical = orientation.get("flip_vertical", False)
 
 
-def flip_image(img: cv2.Mat) -> cv2.Mat:
+def flip_image(img: npt.NDArray[Any]) -> npt.NDArray[Any]:
     if flip_vertical:
         img = cv2.flip(img, 0)
     if flip_horizontal:
@@ -40,7 +42,7 @@ def flip_image(img: cv2.Mat) -> cv2.Mat:
 
 
 def add_text_to_image(
-    img: cv2.Mat,
+    img: npt.NDArray[Any],
     text: str,
     position: str = "bottom-left",
     padding: int = 10,
@@ -48,8 +50,8 @@ def add_text_to_image(
     thickness: int = 2,
     text_color: tuple[int, int, int] = (255, 255, 255),
     bg_color: tuple[int, int, int] = (0, 0, 0),
-    max_text_width: int = None,
-) -> cv2.Mat:
+    max_text_width: Optional[int] = None,
+) -> npt.NDArray[Any]:
     """
     Add multiline text to an image with background, supporting both user-defined
     and automatic line breaks based on available width.

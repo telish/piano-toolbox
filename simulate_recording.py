@@ -195,6 +195,7 @@ class VideoPlayer:
 
     def read_frame(self, frame_number):
         self.load_video_if_needed()
+        assert self.video_capture is not None, "Video capture is not initialized"
         self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
         ret, img = self.video_capture.read()
         return ret, img
@@ -213,6 +214,7 @@ def process_video_frame(event, video_processor):
     img = utils.flip_image(img)
     hub.process_frame(img)
     img = hub.last_image_output
+    assert img is not None, "No image output from hub"
 
     # Draw notes
     for midi_pitch in hub.current_notes.keys():

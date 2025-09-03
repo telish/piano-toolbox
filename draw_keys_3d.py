@@ -1,26 +1,28 @@
 import json
 import os
+from typing import Any, Optional
 
 import cv2
 import numpy as np
+import numpy.typing as npt
 
 import utils
 import keyboard_geometry
 from calibrate_keyboard import CorrespondingPoints
 
-H = None  # Homography matrix
+homography_matrix = None  # Homography matrix
 
 
-def init(keypoint_mappings: list[CorrespondingPoints] = None):
+def init(keypoint_mappings: Optional[list[CorrespondingPoints]] = None):
     """
-    Initialize global calibration variables by performing 3D calibration. 
+    Initialize global calibration variables by performing 3D calibration.
     If no keypoint mappings are provided, it will load them from a file.
 
     Args:
-        keypoint_mappings (list): A list of dictionaries containing 
+        keypoint_mappings (list): A list of dictionaries containing
             "pixel" and "object" keypoints.
     """
-    global H
+    global homography_matrix
 
     if keypoint_mappings is None:
         script_dir = os.path.dirname(os.path.abspath(__file__))
@@ -34,6 +36,10 @@ def init(keypoint_mappings: list[CorrespondingPoints] = None):
 
     object_points = []
     image_points = []
+
+    assert (
+        keypoint_mappings is not None
+    ), "Keypoint mappings must be provided or loaded from file."
     for c in keypoint_mappings:
         object_coords = c["object"]
         pixel_coords = c["pixel"]
@@ -44,58 +50,67 @@ def init(keypoint_mappings: list[CorrespondingPoints] = None):
     dst_pts = np.array(image_points, dtype=np.float32)
 
     # Calculate homography with RANSAC for robustness
-    H, status = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+    homography_matrix, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
 
 def draw_polygon(
-    img: cv2.Mat, points: list[list[float]], color: tuple[int, int, int]
+    img: npt.NDArray[Any], points: npt.NDArray[Any], color: tuple[int, int, int]
 ) -> None:
     img_points = np.round(points).astype(np.int32)
     img_points = img_points.reshape((-1, 1, 2))
     cv2.polylines(img, [img_points], isClosed=True, color=color, thickness=1)
 
 
-def pixel_coordinates_of_key(midi_pitch: int) -> np.ndarray:
+def pixel_coordinates_of_key(midi_pitch: int) -> npt.NDArray[Any]:
     """Projects the 3D coordinates of a key onto the 2D image plane to get the pixel coordinates."""
     points = keyboard_geometry.key_points(midi_pitch)
-    assert H is not None, "Homography matrix not initialized. Call init() first."
+    assert (
+        homography_matrix is not None
+    ), "Homography matrix not initialized. Call init() first."
     # For homography we need 2D points in the form (n,1,2)
     points_2d = np.array(points, dtype=np.float32).reshape(-1, 1, 2)
-    image_points = cv2.perspectiveTransform(points_2d, H)
+    image_points = cv2.perspectiveTransform(points_2d, homography_matrix)
     return image_points
 
 
-def pixel_coordinates_of_bounding_box(midi_pitch: int) -> np.ndarray:
+def pixel_coordinates_of_bounding_box(midi_pitch: int) -> npt.NDArray[Any]:
     """Projects the 3D coordinates of a key's bounding box onto the 2D image plane to get the pixel coordinates."""
     points = keyboard_geometry.key_bounding_box(midi_pitch)
-    assert H is not None, "Homography matrix not initialized. Call init() first."
+    assert (
+        homography_matrix is not None
+    ), "Homography matrix not initialized. Call init() first."
     # For homography we need 2D points in the form (n,1,2)
     points_2d = np.array(points, dtype=np.float32).reshape(-1, 1, 2)
-    image_points = cv2.perspectiveTransform(points_2d, H)
+    image_points = cv2.perspectiveTransform(points_2d, homography_matrix)
     return image_points
 
 
 def draw_key(
-    img: cv2.Mat, midi_pitch: int, color: tuple[int, int, int], annotation: str = ""
-) -> cv2.Mat:
+    img: npt.NDArray[Any],
+    midi_pitch: int,
+    color: tuple[int, int, int],
+    annotation: str = "",
+) -> npt.NDArray[Any]:
     image_points = pixel_coordinates_of_key(midi_pitch)
     draw_polygon(img, image_points, color)
     draw_annotation(img, midi_pitch, color, annotation, image_points)
     return img
 
 
-def draw_keyboard(img: cv2.Mat, color: tuple[int, int, int]) -> cv2.Mat:
+def draw_keyboard(
+    img: npt.NDArray[Any], color: tuple[int, int, int]
+) -> npt.NDArray[Any]:
     for midi_pitch in range(21, 109):
         draw_key(img, midi_pitch, color)
     return img
 
 
 def draw_annotation(
-    img: cv2.Mat,
+    img: npt.NDArray[Any],
     midi_pitch: int,
     color: tuple[int, int, int],
     annotation: str,
-    image_points: list[list[float]],
+    image_points: npt.NDArray[Any],
 ) -> None:
     if annotation:
         if midi_pitch in keyboard_geometry.black_keys:

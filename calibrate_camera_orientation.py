@@ -49,9 +49,6 @@ def main() -> None:
             exit()
     elif args.image:
         image = cv2.imread(args.image)
-        if image is None:
-            print(f"Error: Could not load image file: {args.image}")
-            exit()
     elif args.live is not None:
         cap = cv2.VideoCapture(args.live)
         if not cap.isOpened():
@@ -64,9 +61,6 @@ def main() -> None:
     else:
         image_path = utils.get_keyboard_image_path()
         image = cv2.imread(image_path)
-        if image is None:
-            print("Error: Could not load image!")
-            exit()
 
     text = (
         "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 'q' to save and quit. "

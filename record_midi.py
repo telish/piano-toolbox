@@ -16,8 +16,9 @@ parser.add_argument(
 args = parser.parse_args()
 
 # List available MIDI input ports
-available_ports = mido.get_input_names()
+available_ports = mido.get_input_names()  # type: ignore
 if not available_ports:
+    print("record-midi.py: No MIDI input ports found.")
     sys.exit(1)
 
 # Select MIDI port by index
@@ -35,7 +36,7 @@ os.makedirs(output_dir, exist_ok=True)
 
 # Open MIDI input
 try:
-    with mido.open_input(midi_port_name) as inport:
+    with mido.open_input(midi_port_name) as inport:  # type: ignore
         print("record-midi.py: Recording. Press Ctrl+C to stop.")
         filename = os.path.join(output_dir, "midi_msg.txt")
         with open(filename, "w") as file:

@@ -32,7 +32,7 @@ output_dir = "recording/video"
 os.makedirs(output_dir, exist_ok=True)
 
 # Configure video capture
-fourcc = cv2.VideoWriter_fourcc(*"HFYU")  # HuffYUV Codec (lossless)
+fourcc = cv2.VideoWriter_fourcc(*"HFYU")  # HuffYUV Codec (lossless)  # type: ignore
 fps = 30.0
 video_filename = os.path.join(output_dir, "recording.avi")
 timestamps_filename = os.path.join(output_dir, "timestamps.json")
