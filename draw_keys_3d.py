@@ -41,6 +41,7 @@ def init(keypoint_mappings: Optional[list[CorrespondingPoints]] = None):
     assert (
         keypoint_mappings is not None
     ), "Keypoint mappings must be provided or loaded from file."
+    assert len(keypoint_mappings) >= 4, "At least 4 point correspondences are required."
     for c in keypoint_mappings:
         object_coords = c["object"]
         pixel_coords = c["pixel"]

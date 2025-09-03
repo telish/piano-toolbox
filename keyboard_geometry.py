@@ -193,11 +193,11 @@ def key_bounding_box(midi_pitch: int) -> list[tuple[float, float]]:
 
 re_init()  # Call again, if black_height is changed
 
-if __name__ == "__main__":
+
+def main():
     import cv2
     import numpy as np
-    import utils
-
+    
     img_height = 1080
     img_width = 1920
     img = np.ones((img_height, img_width, 3), dtype=np.uint8) * 255  # White background
@@ -232,3 +232,7 @@ if __name__ == "__main__":
 
     cv2.imshow("Keyboard Geometry", img)
     cv2.waitKey(0)
+
+
+if __name__ == "__main__":
+    main()

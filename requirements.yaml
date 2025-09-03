@@ -9,3 +9,4 @@ dependencies:
       - sounddevice
       - shapely
       - python-osc
+      - pytest
