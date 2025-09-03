@@ -23,9 +23,7 @@ def parse_midi_msgs(filename):
                     timestamp = float(timestamp)  # Convert to float
                     # Convert text to mido Message
                     msg = mido.Message.from_str(msg_text)
-                    result.append(
-                        {"timestamp": timestamp, "type": "midi", "message": msg}
-                    )
+                    result.append({"timestamp": timestamp, "type": "midi", "message": msg})
                 except ValueError as e:
                     print(f"Error parsing line: {line} -> {e}")
     except FileNotFoundError:
@@ -101,10 +99,7 @@ def handle_keyboard_input(img):
     global skip_to_next_note
     stop = not skip_to_next_note["should_skip_to_end"] and (
         (not skip_to_next_note["should_skip_to_next_note"])
-        or (
-            skip_to_next_note["should_skip_to_next_note"]
-            and skip_to_next_note["note_received"]
-        )
+        or (skip_to_next_note["should_skip_to_next_note"] and skip_to_next_note["note_received"])
     )
     if stop:
         # Draw instructions directly on the image
@@ -198,9 +193,7 @@ def process_video_frame(event, video_processor):
         else:
             color = (200, 200, 0)  # Yellow for unknown hand
 
-        annotation = (
-            f"{', '.join(str(x) for x in hub.current_notes[midi_pitch]['finger'])}"
-        )
+        annotation = f"{', '.join(str(x) for x in hub.current_notes[midi_pitch]['finger'])}"
         img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
 
     cv2.imshow("Simulate Recording", img)

@@ -14,16 +14,10 @@ import keyboard_geometry
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Calibrate keyboard geometry from recording or live camera feed"
-    )
-    input_group = parser.add_mutually_exclusive_group(
-        required=False
-    )  # Changed to False
+    parser = argparse.ArgumentParser(description="Calibrate keyboard geometry from recording or live camera feed")
+    input_group = parser.add_mutually_exclusive_group(required=False)  # Changed to False
     input_group.add_argument("--recording", type=str, help="Path to a recording")
-    input_group.add_argument(
-        "--live", type=int, help="Camera index for live feed (default: 0)"
-    )
+    input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
     args = parser.parse_args()
 
     # If neither recording nor live is specified, default to live with index 0
@@ -42,9 +36,7 @@ def draw_points(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> Non
     for i, point in enumerate(points):
         p = point["pixel"]
         size = 5 if i == dragging_index else 3  # Larger point if being dragged
-        color = (
-            (0, 0, 255) if i == dragging_index else (255, 0, 255)
-        )  # Red if dragged, magenta otherwise
+        color = (0, 0, 255) if i == dragging_index else (255, 0, 255)  # Red if dragged, magenta otherwise
         cv2.rectangle(
             img,
             (int(p[0]) - size, int(p[1]) - size),
@@ -96,9 +88,7 @@ def draw_trapezoid(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> 
             )
 
 
-def find_closest_point_index(
-    x, y, points: list[tuple[int, int]], max_distance: int = 20
-):
+def find_closest_point_index(x, y, points: list[tuple[int, int]], max_distance: int = 20):
     """Find the index of the closest point to position (x,y)."""
     if not points:
         return -1
@@ -121,9 +111,7 @@ def mouse_callback(event: int, x: int, y: int, flags: int, param: Any):
     if event == cv2.EVENT_LBUTTONDOWN:
         # Check if an existing point was clicked
         all_pixel_coords = [p["pixel"] for p in user_defined_points]
-        dragging_index = find_closest_point_index(
-            x, y, all_pixel_coords, drag_threshold
-        )
+        dragging_index = find_closest_point_index(x, y, all_pixel_coords, drag_threshold)
 
         # If no nearby point and still room for more points
         if dragging_index == -1:
@@ -175,9 +163,7 @@ def main() -> None:
     print(args)
 
     if args.recording:
-        video_path = os.path.join(
-            os.path.abspath(args.recording), "video", "recording.avi"
-        )
+        video_path = os.path.join(os.path.abspath(args.recording), "video", "recording.avi")
         utils.set_calibration_base_dir(os.path.abspath(args.recording))
         # Open video and read first frame
         c = cv2.VideoCapture(video_path)
@@ -265,9 +251,7 @@ def find_closest_point(pt):
                 closest = key_pt
                 closest_pitch = pitch
                 closest_index = idx  # Store the index
-    assert (
-        closest_pitch is not None and closest_index is not None
-    ), f"Could not find closest pitch for point {pt}"
+    assert closest_pitch is not None and closest_index is not None, f"Could not find closest pitch for point {pt}"
 
     object_coords = keyboard_geometry.key_points(closest_pitch)[closest_index]
     # print(f"Closest point to {pt} is {closest} (index {closest_index}) on key {closest_pitch} (distance: {min_distance:.2f}). Object coordinates of that point: {object_coords}")

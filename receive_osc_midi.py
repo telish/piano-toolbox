@@ -8,9 +8,7 @@ from pythonosc.osc_server import BlockingOSCUDPServer
 def handle_midi(address, *args):
     if len(args) == 3:
         channel, note, velocity = args
-        print(
-            f"Received MIDI Note: Channel={channel}, Note={note}, Velocity={velocity}"
-        )
+        print(f"Received MIDI Note: Channel={channel}, Note={note}, Velocity={velocity}")
     else:
         print(f"Unexpected MIDI message: {args}")
 

@@ -10,16 +10,10 @@ import utils
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Calibrate camera orientation from recording or live camera feed"
-    )
-    input_group = parser.add_mutually_exclusive_group(
-        required=False
-    )  # Changed to False
+    parser = argparse.ArgumentParser(description="Calibrate camera orientation from recording or live camera feed")
+    input_group = parser.add_mutually_exclusive_group(required=False)  # Changed to False
     input_group.add_argument("--recording", type=str, help="Path to a recording")
-    input_group.add_argument(
-        "--live", type=int, help="Camera index for live feed (default: 0)"
-    )
+    input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
     args = parser.parse_args()
 
     # If neither recording nor live is specified, default to live with index 0
@@ -38,9 +32,7 @@ def save_orientation() -> None:
     json_path = utils.retrieve_camera_orientation_file_path()
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
     with open(json_path, "w") as f:
-        json.dump(
-            {"flip_horizontal": flip_horizontal, "flip_vertical": flip_vertical}, f
-        )
+        json.dump({"flip_horizontal": flip_horizontal, "flip_vertical": flip_vertical}, f)
 
 
 def main() -> None:
@@ -52,9 +44,7 @@ def main() -> None:
 
     if args.recording:
         utils.set_calibration_base_dir(os.path.abspath(args.recording))
-        video_path = os.path.join(
-            os.path.abspath(args.recording), "video", "recording.avi"
-        )
+        video_path = os.path.join(os.path.abspath(args.recording), "video", "recording.avi")
         c = cv2.VideoCapture(video_path)
         if not c.isOpened():
             print(f"Error: Could not open video file: {video_path}")

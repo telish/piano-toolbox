@@ -14,8 +14,8 @@ def _point_distance_to_quad(point: tuple[int, int], quad: npt.NDArray[Any]) -> f
     """
     point: tuple (x, y)
     quad: numpy array with shape (4, 1, 2)
-    Returns a negative value (= how much it is inside), if the point is inside the polygon,
-    otherwise the minimum distance to the polygon.
+    Returns a negative value (= how much it is inside), if the point is inside the polygon, otherwise the minimum 
+    distance to the polygon.
     """
     # Convert quad to shape (4,2)
     quad_points = quad[:, 0, :]
@@ -44,7 +44,8 @@ class AnalysisHub:
             midi_pitch (int): The MIDI pitch to check against.
 
         Returns:
-            tuple: (hand (str), fingers (list of int)). 'hand' is either "left" or "right", and 'fingers' is a list of finger indices (1=thumb, 2=index, ..., 5=pinky) closest to or inside
+            tuple: (hand (str), fingers (list of int)). 'hand' is either "left" or "right", and 'fingers' is a list of 
+                finger indices (1=thumb, 2=index, ..., 5=pinky) closest to or inside
         """
 
         outline = draw_keys_3d.pixel_coordinates_of_key(midi_pitch)
@@ -59,10 +60,7 @@ class AnalysisHub:
             right_x_coords = self.last_mp_result["right_landmarks_xyz"][0]
             right_x = min(right_x_coords) * track_hands.image_width_px
 
-        if (
-            not self.last_mp_result["left_visible"]
-            and not self.last_mp_result["right_visible"]
-        ):
+        if not self.last_mp_result["left_visible"] and not self.last_mp_result["right_visible"]:
             return "", []
         elif not self.last_mp_result["left_visible"]:
             result_hand = "right"
@@ -132,9 +130,7 @@ class AnalysisHub:
 
     def process_frame(self, img: npt.NDArray[Any]):
         self.last_image_output = img.copy()
-        self.last_mp_result = track_hands.analyze_frame(
-            img_input=img, img_output=self.last_image_output
-        )
+        self.last_mp_result = track_hands.analyze_frame(img_input=img, img_output=self.last_image_output)
         for pitch in self.current_notes.keys():
             tip_on_key.find_tip_on_key(
                 pitch,
