@@ -1,8 +1,11 @@
+"""Record MIDI messages from a specified input port and save them to a text file."""
+
 import os
 import time
 import argparse  # For command-line arguments
-import mido
 import sys
+
+import mido
 
 
 # Parse command-line arguments
@@ -31,15 +34,15 @@ if args.port_index < 0 or args.port_index >= len(available_ports):
 midi_port_name = available_ports[args.port_index]
 print(f"record-midi.py: Using MIDI input: {midi_port_name}")
 
-output_dir = "recording/midi"
-os.makedirs(output_dir, exist_ok=True)
+OUTPUT_DIR = "recording/midi"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Open MIDI input
 try:
     with mido.open_input(midi_port_name) as inport:  # type: ignore
         print("record-midi.py: Recording. Press Ctrl+C to stop.")
-        filename = os.path.join(output_dir, "midi_msg.txt")
-        with open(filename, "w") as file:
+        filename = os.path.join(OUTPUT_DIR, "midi_msg.txt")
+        with open(filename, "w", encoding="utf-8") as file:
             while True:
                 for msg in inport.iter_pending():
                     timestamp = time.time()

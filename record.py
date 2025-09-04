@@ -1,3 +1,5 @@
+"""Start recording video, audio, and MIDI processes with forwarded arguments."""
+
 import os
 import shutil
 import subprocess

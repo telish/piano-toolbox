@@ -1,6 +1,9 @@
+"""Simulate recording by playing back recorded video and MIDI messages."""
+
 import json
 import os
-import time
+
+# import time
 import argparse  # For command-line arguments
 
 import cv2
@@ -16,14 +19,16 @@ def parse_midi_msgs(filename):
     """Parse MIDI messages from file. Returns empty list if file doesn't exist."""
     result = []
     try:
-        with open(filename, "r") as file:
+        with open(filename, "r", encoding="utf-8") as file:
             for line in file:
                 try:
                     timestamp, msg_text = line.strip().split(": ", 1)
                     timestamp = float(timestamp)  # Convert to float
                     # Convert text to mido Message
                     msg = mido.Message.from_str(msg_text)
-                    result.append({"timestamp": timestamp, "type": "midi", "message": msg})
+                    result.append(
+                        {"timestamp": timestamp, "type": "midi", "message": msg}
+                    )
                 except ValueError as e:
                     print(f"Error parsing line: {line} -> {e}")
     except FileNotFoundError:
@@ -35,7 +40,7 @@ def parse_midi_msgs(filename):
 
 def parse_video_timestamps(timestamps_file):
     """Parse the timestamps.json file created by record_video.py"""
-    with open(timestamps_file, "r") as f:
+    with open(timestamps_file, "r", encoding="utf-8") as f:
         timestamps = json.load(f)
     return [
         {
@@ -95,11 +100,21 @@ def draw_text(img, instruction_text):
     cv2.imshow("Simulate Recording", img)
 
 
+skip_to_next_note = {
+    "should_skip_to_next_note": False,
+    "note_received": False,
+    "should_skip_to_end": False,
+}
+
+
 def handle_keyboard_input(img):
     global skip_to_next_note
     stop = not skip_to_next_note["should_skip_to_end"] and (
         (not skip_to_next_note["should_skip_to_next_note"])
-        or (skip_to_next_note["should_skip_to_next_note"] and skip_to_next_note["note_received"])
+        or (
+            skip_to_next_note["should_skip_to_next_note"]
+            and skip_to_next_note["note_received"]
+        )
     )
     if stop:
         # Draw instructions directly on the image
@@ -130,7 +145,7 @@ def handle_keyboard_input(img):
 
 def get_all_events(recording_base):
     midi_events = parse_midi_msgs(os.path.join(recording_base, "midi/midi_msg.txt"))
-    video_events = parse_video(os.path.join(args.recording, "video"))
+    video_events = parse_video(os.path.join(recording_base, "video"))
 
     # Combine and sort events by timestamp
     all_events = midi_events + video_events
@@ -140,7 +155,6 @@ def get_all_events(recording_base):
 
 
 def process_midi(event):
-    global skip_to_next_note
     print(f"{event['timestamp']}: {event['message']}")
     hub.process_midi_event(event)
     res = hub.last_midi_result
@@ -151,8 +165,9 @@ def process_midi(event):
 
 
 class VideoPlayer:
+    """Class to handle video playback."""
+
     def __init__(self, video_path):
-        video_path = os.path.join(args.recording, "video")
         self.video_path = video_path
         self.video_capture = None
 
@@ -185,66 +200,63 @@ def process_video_frame(event, video_processor):
     assert img is not None, "No image output from hub"
 
     # Draw notes
-    for midi_pitch in hub.current_notes.keys():
-        if hub.current_notes[midi_pitch]["hand"] == "left":
+    for midi_pitch, note_props in hub.current_notes.items():
+        if note_props["hand"] == "left":
             color = (0, 0, 200)  # Red color
-        elif hub.current_notes[midi_pitch]["hand"] == "right":
+        elif note_props["hand"] == "right":
             color = (0, 200, 0)  # Green color
         else:
             color = (200, 200, 0)  # Yellow for unknown hand
 
-        annotation = f"{', '.join(str(x) for x in hub.current_notes[midi_pitch]['finger'])}"
+        annotation = f"{', '.join(str(x) for x in note_props['finger'])}"
         img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
 
     cv2.imshow("Simulate Recording", img)
     handle_keyboard_input(img)
 
 
-parser = argparse.ArgumentParser(description="Simulate recording playback.")
-parser.add_argument(
-    "--port-out",
-    default=9876,
-    type=int,
-    help="OSC outgoing port (default: 9876)",
-)
-parser.add_argument(
-    "--recording",
-    type=str,
-    default="./recording",
-    help="Path of the recording",
-)
-args = parser.parse_args()
+def main():
+    parser = argparse.ArgumentParser(description="Simulate recording playback.")
+    parser.add_argument(
+        "--port-out",
+        default=9876,
+        type=int,
+        help="OSC outgoing port (default: 9876)",
+    )
+    parser.add_argument(
+        "--recording",
+        type=str,
+        default="./recording",
+        help="Path of the recording",
+    )
+    args = parser.parse_args()
 
-if os.path.exists(os.path.join(args.recording, "calibration")):
-    utils.set_calibration_base_dir(args.recording)
-osc_sender.configure(args.port_out)
-draw_keys_3d.init()
+    if os.path.exists(os.path.join(args.recording, "calibration")):
+        utils.set_calibration_base_dir(args.recording)
+    osc_sender.configure(args.port_out)
+    draw_keys_3d.init()
+
+    video_player = VideoPlayer(args.recording)
+    all_events = get_all_events(args.recording)
+    # start_real = time.time()
+    # start_recording = all_events[0]["timestamp"]
+    for event in all_events:
+        # Wait until the event's timestamp is reached
+        # time_to_sleep = event["timestamp"] - start_recording - (time.time() - start_real)
+        # if time_to_sleep < 0:  # Make sure time to sleep is not negative.
+        #     time_to_sleep = 0
+        # time.sleep(time_to_sleep)
+
+        if event["type"] == "midi":
+            process_midi(event)
+        elif event["type"] == "video":
+            process_video_frame(event, video_player)
+        else:
+            assert False, f"Unknown event type: {event['type']}"
+
+    # Clean up
+    cv2.destroyAllWindows()
 
 
-skip_to_next_note = {
-    "should_skip_to_next_note": False,
-    "note_received": False,
-    "should_skip_to_end": False,
-}
-
-video_player = VideoPlayer(args.recording)
-all_events = get_all_events(args.recording)
-start_real = time.time()
-start_recording = all_events[0]["timestamp"]
-img = None
-for event in all_events:
-    # Wait until the event's timestamp is reached
-    # time_to_sleep = event["timestamp"] - start_recording - (time.time() - start_real)
-    # if time_to_sleep < 0:  # Make sure time to sleep is not negative.
-    #     time_to_sleep = 0
-    # time.sleep(time_to_sleep)
-
-    if event["type"] == "midi":
-        process_midi(event)
-    elif event["type"] == "video":
-        process_video_frame(event, video_player)
-    else:
-        assert False, f"Unknown event type: {event['type']}"
-
-# Clean up
-cv2.destroyAllWindows()
+if __name__ == "__main__":
+    main()

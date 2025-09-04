@@ -1,4 +1,5 @@
-import os
+"""Checks video rate (fps) of a recording by analyzing the timestamps.json file."""
+
 import json
 import matplotlib.pyplot as plt
 
@@ -7,7 +8,7 @@ def parse_timestamps(json_path: str) -> list[dict]:
     """
     Liest die Timestamps aus der JSON-Datei.
     """
-    with open(json_path, "r") as f:
+    with open(json_path, "r", encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -32,7 +33,10 @@ def plot_inter_frame_intervals(data: list[dict], bins: int = 50):
     plt.grid(True, alpha=0.3)
     plt.show()
 
+def main():
+    timestamps_path = "recording/video/timestamps.json"
+    timestamps = parse_timestamps(timestamps_path)
+    plot_inter_frame_intervals(timestamps)
 
-timestamps_path = "recording/video/timestamps.json"
-timestamps = parse_timestamps(timestamps_path)
-plot_inter_frame_intervals(timestamps)
+if __name__ == "__main__":
+    main()

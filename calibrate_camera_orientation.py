@@ -1,10 +1,21 @@
+"""
+Camera orientation calibration utility.
+
+This module allows calibrating the camera orientation (horizontal and vertical flipping)
+for consistent keyboard and hand positioning in the video feed. It works with both live
+camera input and pre-recorded videos.
+
+Usage:
+    python calibrate_camera_orientation.py [--recording PATH | --live CAMERA_INDEX]
+
+The orientation settings are saved to a JSON file for use by other modules in the system.
+"""
+
 import argparse
 import json
 import os
-from typing import Any
 
 import cv2
-import numpy.typing as npt
 
 import utils
 
@@ -22,22 +33,21 @@ def parse_args() -> argparse.Namespace:
 
     return args
 
-
-flip_horizontal = False
-flip_vertical = False
+_state = {
+    "flip_horizontal": False,
+    "flip_vertical": False,
+}
 
 
 def save_orientation() -> None:
     print("Saving camera orientation to calibration/camera_orientation.json")
     json_path = utils.retrieve_camera_orientation_file_path()
     os.makedirs(os.path.dirname(json_path), exist_ok=True)
-    with open(json_path, "w") as f:
-        json.dump({"flip_horizontal": flip_horizontal, "flip_vertical": flip_vertical}, f)
+    with open(json_path, "w", encoding="utf-8") as f:
+        json.dump({"flip_horizontal": _state["flip_horizontal"], "flip_vertical": _state["flip_vertical"]}, f)
 
 
 def main() -> None:
-    global flip_horizontal, flip_vertical
-
     args = parse_args()
     image = None
     cap = None
@@ -65,18 +75,19 @@ def main() -> None:
     assert image is not None
 
     text = (
-        "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 'q' to save and quit. "
-        "Desired result: (1) The keyboard appears at the top of the image. "
-        "(2) The left hand appears on the left side of the image, the right hand on the right."
+        "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 's' to save and quit and"
+        " 'q' to quit without saving. Desired result: (1) The keyboard appears at the top of the "
+        "image. (2) The left hand appears on the left side of the image, the right hand on the "
+        "right."
     )
 
     cv2.namedWindow("Keyboard View")
 
     while True:
         img_copy = image.copy()
-        if flip_horizontal:
+        if _state["flip_horizontal"]:
             img_copy = cv2.flip(img_copy, 1)
-        if flip_vertical:
+        if _state["flip_vertical"]:
             img_copy = cv2.flip(img_copy, 0)
 
         img_copy = utils.add_text_to_image(img_copy, text)
@@ -85,12 +96,14 @@ def main() -> None:
         key = cv2.waitKey(1) & 0xFF
 
         if key == ord("q"):
+            break
+        elif key == ord("s"):
             save_orientation()
             break
         elif key == ord("h"):
-            flip_horizontal = not flip_horizontal
+            _state["flip_horizontal"] = not _state["flip_horizontal"]
         elif key == ord("v"):
-            flip_vertical = not flip_vertical
+            _state["flip_vertical"] = not _state["flip_vertical"]
 
     cv2.destroyAllWindows()
 

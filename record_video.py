@@ -1,3 +1,5 @@
+"""Record video from camera."""
+
 import argparse
 import json
 import os
@@ -28,14 +30,14 @@ camera_index = args.camera_index
 show_image = args.show_image
 
 # Create output directory
-output_dir = "recording/video"
-os.makedirs(output_dir, exist_ok=True)
+OUTPUT_DIR = "recording/video"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
 
 # Configure video capture
 fourcc = cv2.VideoWriter_fourcc(*"HFYU")  # HuffYUV Codec (lossless)  # type: ignore
-fps = 30.0
-video_filename = os.path.join(output_dir, "recording.avi")
-timestamps_filename = os.path.join(output_dir, "timestamps.json")
+FPS = 30.0
+video_filename = os.path.join(OUTPUT_DIR, "recording.avi")
+timestamps_filename = os.path.join(OUTPUT_DIR, "timestamps.json")
 
 # Open camera
 cap = cv2.VideoCapture(camera_index)
@@ -50,19 +52,19 @@ if not ret:
     sys.exit(1)
 
 height, width = frame.shape[:2]
-out = cv2.VideoWriter(video_filename, fourcc, fps, (width, height))
+out = cv2.VideoWriter(video_filename, fourcc, FPS, (width, height))
 timestamps = []
 
 
 # Signal handler for graceful exit
-def signal_handler(sig, frame):
+def signal_handler(_sig, _frame):
     # Close video writer and camera
     out.release()
     cap.release()
     cv2.destroyAllWindows()
 
     # Save timestamps to file
-    with open(timestamps_filename, "w") as f:
+    with open(timestamps_filename, "w", encoding="utf-8") as f:
         json.dump(timestamps, f)
 
     print(f"record-video.py: Video saved to {video_filename}")

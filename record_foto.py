@@ -1,10 +1,10 @@
-import cv2
 import signal
 import sys
 import os
 import time
 import argparse  # Import argparse for command-line arguments
 
+import cv2
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Capture photos from camera.")

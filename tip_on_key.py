@@ -1,5 +1,7 @@
+"""Functions to find fingertip position on a piano key and convert to trapezoid coordinates."""
 import cv2
 import numpy as np
+
 import utils
 import draw_keys_3d
 import track_hands
@@ -134,11 +136,11 @@ def point_to_trapezoid_coords(point, trapezoid):
         dv_vector = bottom - top
 
         # Create Jacobian matrix
-        J = np.column_stack([du_vector, dv_vector])
+        jacobian = np.column_stack([du_vector, dv_vector])
 
         # Calculate adjustment for u and v
         try:
-            delta = np.linalg.solve(J, point - computed_point)
+            delta = np.linalg.solve(jacobian, point - computed_point)
             u += delta[0]
             v += delta[1]
         except np.linalg.LinAlgError:
@@ -165,7 +167,7 @@ def test_interactive():
     midi_pitch = 60
 
     # Mouse click handler
-    def mouse_callback(event, x, y, flags, param):
+    def mouse_callback(event, x, y, _flags, _param):
         if event == cv2.EVENT_LBUTTONDOWN:
             img_copy = img.copy()
             key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)

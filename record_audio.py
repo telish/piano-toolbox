@@ -1,17 +1,20 @@
-import sounddevice as sd
+"""Records audio from the default microphone and saves it as a WAV file."""
+
 import wave
-import numpy as np
 import os
 import signal
 import sys
 
-samplerate = 48000  # 48 kHz
-channels = 1  # Mono
-dtype = np.int16  # 16-bit PCM
+import numpy as np
+import sounddevice as sd
 
-output_dir = "recording/audio"
-os.makedirs(output_dir, exist_ok=True)
-filename = os.path.join(output_dir, "audio.wav")
+SAMPLE_RATE = 48000  # 48 kHz
+CHANNELS = 1  # Mono
+FORMAT_PCM = np.int16  # 16-bit PCM
+
+OUTPUT_DIR = "recording/audio"
+os.makedirs(OUTPUT_DIR, exist_ok=True)
+filename = os.path.join(OUTPUT_DIR, "audio.wav")
 
 print(sd.query_devices())  # List all audio devices
 
@@ -34,9 +37,9 @@ def save_wav():
     audio_np = np.concatenate(audio_data, axis=0)
 
     with wave.open(filename, "wb") as wf:
-        wf.setnchannels(channels)
+        wf.setnchannels(CHANNELS)
         wf.setsampwidth(2)  # 16-bit
-        wf.setframerate(samplerate)
+        wf.setframerate(SAMPLE_RATE)
         wf.writeframes(audio_np.tobytes())
 
     print(f"record-audio.py: Audio saved as {filename}")
@@ -54,6 +57,6 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Start recording
 print("record-audio: Recording. Press Ctrl + C to stop.")
-with sd.InputStream(samplerate=samplerate, channels=channels, dtype=dtype, callback=callback):
+with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, dtype=FORMAT_PCM, callback=callback):
     while True:
         sd.sleep(100)  # Keep process running

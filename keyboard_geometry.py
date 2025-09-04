@@ -1,8 +1,15 @@
+"""Defines the geometry of a standard 88-key piano keyboard in millimeters.
+Includes functions to get key point coordinates and bounding boxes for a given pitch."""
+
 from typing import Final
 
-import utils
 import os
 import json
+
+import cv2
+import numpy as np
+
+import utils
 
 
 # Based on: https://upload.wikimedia.org/wikipedia/commons/4/48/Pianoteilung.svg
@@ -17,7 +24,7 @@ def load_black_height() -> float:
     json_path = utils.get_keyboard_geometry_file_path()
     if json_path and os.path.exists(json_path):
         try:
-            with open(json_path, "r") as f:
+            with open(json_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
                 if "black_height" in data:
                     return data["black_height"]
@@ -46,7 +53,7 @@ KEYBOARD_WIDTH: Final[float] = 52.0 * WHITE_BOTTOM_WIDTH
 WHITE_HEIGHT: Final[float] = 145.0
 
 # fmt:off
-white_keys: Final[list[int]] = [
+WHITE_KEYS: Final[list[int]] = [
     21, 23, 24, 26, 28, 29, 31,  # lowest octave
     33, 35, 36, 38, 40, 41, 43,  # second octave
     45, 47, 48, 50, 52, 53, 55,  # third octave
@@ -57,9 +64,9 @@ white_keys: Final[list[int]] = [
     105, 107, 108  # highest octave
 ]
 # fmt:on
-black_keys: Final[list[int]] = [key for key in range(21, 108) if key not in white_keys]
+BLACK_KEYS: Final[list[int]] = [key for key in range(21, 108) if key not in WHITE_KEYS]
 
-keyboard_outline: Final[dict[str, tuple[float, float]]] = {
+KEYBOARD_OUTLINE: Final[dict[str, tuple[float, float]]] = {
     "top-left": (0.0, 0.0),
     "top-right": (KEYBOARD_WIDTH, 0.0),
     "bottom-right": (KEYBOARD_WIDTH, WHITE_HEIGHT),
@@ -72,7 +79,7 @@ def pitch_class(midi_pitch: int) -> str:
     pitch_classes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     return pitch_classes[c]
 
-
+left_at_bottom, left_at_top, right_at_bottom, right_at_top = [], [], [], []
 def re_init() -> None:
     global left_at_bottom, left_at_top, right_at_bottom, right_at_top
     left_at_top = [0.0]
@@ -108,8 +115,8 @@ def re_init() -> None:
 
     left_at_bottom = []
     for i, pitch in enumerate(range(21, 109)):
-        if pitch in white_keys:
-            white_idx = white_keys.index(pitch)
+        if pitch in WHITE_KEYS:
+            white_idx = WHITE_KEYS.index(pitch)
             left_at_bottom.append(white_idx * WHITE_BOTTOM_WIDTH)
         else:
             left_at_bottom.append(left_at_top[i])
@@ -120,7 +127,7 @@ def re_init() -> None:
             right_at_top[i] += LOWER_A_TOP_WIDTH
         elif pitch == 108:
             right_at_top[i] += WHITE_BOTTOM_WIDTH
-        elif pitch not in white_keys:
+        elif pitch not in WHITE_KEYS:
             right_at_top[i] += BLACK_WIDTH
         else:
             match pitch_class(pitch):
@@ -141,7 +148,7 @@ def re_init() -> None:
 
     right_at_bottom = left_at_bottom.copy()
     for i, pitch in enumerate(range(21, 109)):
-        if pitch in white_keys:
+        if pitch in WHITE_KEYS:
             right_at_bottom[i] += WHITE_BOTTOM_WIDTH
         else:
             right_at_bottom[i] += BLACK_WIDTH
@@ -154,7 +161,7 @@ def re_init() -> None:
 
 def key_points(midi_pitch: int) -> list[tuple[float, float]]:
     idx = midi_pitch - 21
-    if midi_pitch in white_keys:
+    if midi_pitch in WHITE_KEYS:
         return [
             (left_at_top[idx], 0),  # top-left
             (left_at_top[idx], black_height),  # left-middle 1/2
@@ -175,10 +182,10 @@ def key_points(midi_pitch: int) -> list[tuple[float, float]]:
 
 
 def key_bounding_box(midi_pitch: int) -> list[tuple[float, float]]:
-    if midi_pitch not in white_keys:
+    if midi_pitch not in WHITE_KEYS:
         return key_points(midi_pitch)
     else:
-        idx = white_keys.index(midi_pitch)
+        idx = WHITE_KEYS.index(midi_pitch)
         left = idx * WHITE_BOTTOM_WIDTH
         right = left + WHITE_BOTTOM_WIDTH
         return [
@@ -193,9 +200,6 @@ re_init()  # Call again, if black_height is changed
 
 
 def main():
-    import cv2
-    import numpy as np
-
     img_height = 1080
     img_width = 1920
     img = np.ones((img_height, img_width, 3), dtype=np.uint8) * 255  # White background
