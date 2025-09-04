@@ -9,7 +9,6 @@ from unittest.mock import patch, MagicMock, mock_open
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 import calibrate_camera_orientation
-import utils
 
 
 @pytest.fixture
@@ -44,7 +43,9 @@ def test_parse_args_live():
 
 def test_parse_args_recording():
     """Test parse_args with recording option."""
-    with patch("sys.argv", ["calibrate_camera_orientation.py", "--recording", "test_recording"]):
+    with patch(
+        "sys.argv", ["calibrate_camera_orientation.py", "--recording", "test_recording"]
+    ):
         args = calibrate_camera_orientation.parse_args()
         assert args.recording == "test_recording"
         assert args.live is None
@@ -52,23 +53,26 @@ def test_parse_args_recording():
 
 def test_save_orientation():
     """Test save_orientation function saves correct data."""
-    # Set up the global variables
-    calibrate_camera_orientation.flip_horizontal = True
-    calibrate_camera_orientation.flip_vertical = False
+    # Set up the _state dictionary values
+    calibrate_camera_orientation._state["flip_horizontal"] = True
+    calibrate_camera_orientation._state["flip_vertical"] = False
 
     # Create a mock for the file operations
     mock_file = MagicMock()
     m_open = mock_open(mock=mock_file)
 
     with patch("builtins.open", m_open), patch("json.dump") as mock_dump, patch(
-        "utils.retrieve_camera_orientation_file_path", return_value="/path/to/orientation.json"
+        "utils.retrieve_camera_orientation_file_path",
+        return_value="/path/to/orientation.json",
     ), patch("os.makedirs"):
 
         # Call the function
         calibrate_camera_orientation.save_orientation()
 
         # Check file was opened correctly
-        m_open.assert_called_once_with("/path/to/orientation.json", "w")
+        m_open.assert_called_once_with(
+            "/path/to/orientation.json", "w", encoding="utf-8"
+        )
 
         # Check correct data was written
         mock_dump.assert_called_once()
@@ -90,32 +94,32 @@ def test_main_live_mode(mock_destroy, mock_waitkey, mock_imshow, mock_videocaptu
     mock_videocapture.return_value = mock_cap
 
     # Reset global variables
-    calibrate_camera_orientation.flip_horizontal = False
-    calibrate_camera_orientation.flip_vertical = False
+    calibrate_camera_orientation._state["flip_horizontal"] = False
+    calibrate_camera_orientation._state["flip_vertical"] = False
 
     # Mock waitKey to simulate key presses
     mock_waitkey.side_effect = [
         ord("h"),  # Press 'h' to flip horizontal
         ord("v"),  # Press 'v' to flip vertical
-        ord("q"),  # Press 'q' to quit
+        ord("s"),  # Press 's' to save and quit
     ]
 
     # Patch command line arguments and other functions
-    with patch("calibrate_camera_orientation.parse_args", return_value=MagicMock(live=0, recording=None)), patch(
+    with patch(
         "utils.add_text_to_image", return_value=np.zeros((480, 640, 3), dtype=np.uint8)
     ), patch("calibrate_camera_orientation.save_orientation") as mock_save, patch(
         "cv2.flip", return_value=np.zeros((480, 640, 3), dtype=np.uint8)
     ):
 
-        # Run main function
-        calibrate_camera_orientation.main()
+        # Run main function with CLI args
+        calibrate_camera_orientation.main(["--live", "0"])
 
         # Check video capture was initialized correctly
         mock_videocapture.assert_called_once_with(0)
 
         # Check that the key presses changed the orientation flags
-        assert calibrate_camera_orientation.flip_horizontal is True
-        assert calibrate_camera_orientation.flip_vertical is True
+        assert calibrate_camera_orientation._state["flip_horizontal"] is True
+        assert calibrate_camera_orientation._state["flip_vertical"] is True
 
         # Check that save_orientation was called
         mock_save.assert_called_once()
@@ -128,7 +132,9 @@ def test_main_live_mode(mock_destroy, mock_waitkey, mock_imshow, mock_videocaptu
 @patch("cv2.imshow")
 @patch("cv2.waitKey")
 @patch("cv2.destroyAllWindows")
-def test_main_recording_mode(mock_destroy, mock_waitkey, mock_imshow, mock_videocapture, mock_orientation_file):
+def test_main_recording_mode(
+    mock_destroy, mock_waitkey, mock_imshow, mock_videocapture, mock_orientation_file
+):
     """Test main function in recording mode."""
     # Setup mock video capture
     mock_cap = MagicMock()
@@ -137,30 +143,31 @@ def test_main_recording_mode(mock_destroy, mock_waitkey, mock_imshow, mock_video
     mock_videocapture.return_value = mock_cap
 
     # Reset global variables
-    calibrate_camera_orientation.flip_horizontal = False
-    calibrate_camera_orientation.flip_vertical = False
+    calibrate_camera_orientation._state["flip_horizontal"] = False
+    calibrate_camera_orientation._state["flip_vertical"] = False
 
     # Mock waitKey to simulate key presses
-    mock_waitkey.side_effect = [ord("q")]  # Press 'q' to quit
+    mock_waitkey.side_effect = [ord("s")]  # Press 's' to save and quit
 
     # Create recording path
     recording_path = os.path.join(mock_orientation_file, "recording")
     os.makedirs(os.path.join(recording_path, "video"), exist_ok=True)
     video_path = os.path.join(recording_path, "video", "recording.avi")
 
-    # Patch command line arguments and other functions
+    # Mock args instead of patching parse_args
+    mock_args = MagicMock(live=None, recording=recording_path)
+
+    # Only patch the necessary functions
     with patch(
-        "calibrate_camera_orientation.parse_args", return_value=MagicMock(live=None, recording=recording_path)
-    ), patch("utils.add_text_to_image", return_value=np.zeros((480, 640, 3), dtype=np.uint8)), patch(
-        "calibrate_camera_orientation.save_orientation"
-    ) as mock_save, patch(
-        "os.path.abspath", return_value=recording_path
-    ), patch(
-        "os.path.join", return_value=video_path
+        "utils.add_text_to_image", return_value=np.zeros((480, 640, 3), dtype=np.uint8)
+    ), patch("calibrate_camera_orientation.save_orientation") as mock_save, patch(
+        "cv2.flip", return_value=np.zeros((480, 640, 3), dtype=np.uint8)
     ):
 
-        # Run main function
-        calibrate_camera_orientation.main()
+        # Run main function with the mocked args directly
+        calibrate_camera_orientation.main(
+            ["--recording", recording_path]
+        )  # If you've updated main to accept CLI args
 
         # Check video capture was initialized correctly
         mock_videocapture.assert_called_once_with(video_path)
@@ -184,8 +191,8 @@ def test_main_function_calls():
             if calibrate_camera_orientation.__name__ == "__main__":
                 mock_main()
 
-            # Verify main was called
-            mock_main.assert_called_once()
+            # Verify main was called with no arguments
+            mock_main.assert_called_once_with()
     finally:
         # Restore original name
         calibrate_camera_orientation.__name__ = original_name

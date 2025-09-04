@@ -20,12 +20,32 @@ def mock_mp_result():
         "left_landmarks_xyz": (
             [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],  # x-coords for all landmarks
             [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],  # y-coords for all landmarks
-            [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09],  # z-coords for all landmarks
+            [
+                0.01,
+                0.02,
+                0.03,
+                0.04,
+                0.05,
+                0.06,
+                0.07,
+                0.08,
+                0.09,
+            ],  # z-coords for all landmarks
         ),
         "right_landmarks_xyz": (
             [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],  # x-coords for all landmarks
             [0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9],  # y-coords for all landmarks
-            [0.01, 0.02, 0.03, 0.04, 0.05, 0.06, 0.07, 0.08, 0.09],  # z-coords for all landmarks
+            [
+                0.01,
+                0.02,
+                0.03,
+                0.04,
+                0.05,
+                0.06,
+                0.07,
+                0.08,
+                0.09,
+            ],  # z-coords for all landmarks
         ),
     }
 
@@ -75,7 +95,9 @@ def test_closest_hand_and_fingers_no_hands():
     # Mock the draw_keys_3d.pixel_coordinates_of_key function
     with patch(
         "draw_keys_3d.pixel_coordinates_of_key",
-        return_value=np.array([[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32),
+        return_value=np.array(
+            [[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32
+        ),
     ):
         hand, fingers = hub.closest_hand_and_fingers(60)  # Middle C
         assert hand == ""
@@ -98,7 +120,9 @@ def test_closest_hand_and_fingers_left_only():
     # Mock pixel_coordinates_of_key
     with patch(
         "draw_keys_3d.pixel_coordinates_of_key",
-        return_value=np.array([[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32),
+        return_value=np.array(
+            [[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32
+        ),
     ):
         hand, fingers = hub.closest_hand_and_fingers(60)  # Middle C
         assert hand == "left"
@@ -137,7 +161,9 @@ def test_closest_hand_and_fingers_both_hands(mock_mp_result, mock_key_outline):
     analysis_hub.track_hands.MP_PINKY_TIP = 20
 
     # Mock pixel_coordinates_of_key
-    with patch("draw_keys_3d.pixel_coordinates_of_key", return_value=mock_key_outline), patch(
+    with patch(
+        "draw_keys_3d.pixel_coordinates_of_key", return_value=mock_key_outline
+    ), patch(
         "analysis_hub._point_distance_to_quad", return_value=0.0
     ):  # No distance, so the fingers are exactly on the key
         hand, fingers = hub.closest_hand_and_fingers(60)  # Middle C
@@ -159,7 +185,9 @@ def test_process_midi_event_note_on():
     event = {"message": mock_msg}
 
     # Mock closest_hand_and_fingers to return fixed values
-    with patch.object(hub, "closest_hand_and_fingers", return_value=("left", [2])), patch("osc_sender.send_message"):
+    with patch.object(
+        hub, "closest_hand_and_fingers", return_value=("left", [2])
+    ), patch("osc_sender.send_message"):
         hub.process_midi_event(event)
 
         # Check that the note was added to current_notes
@@ -210,7 +238,9 @@ def test_process_frame():
     hub.current_notes[60] = {"velocity": 64, "hand": "left", "finger": [2]}
 
     # Mock the dependencies
-    with patch("track_hands.analyze_frame", return_value={"left_visible": True}), patch("tip_on_key.find_tip_on_key"):
+    with patch("track_hands.analyze_frame", return_value={"left_visible": True}), patch(
+        "tip_on_key.find_tip_on_key"
+    ):
 
         hub.process_frame(test_image)
 

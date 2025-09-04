@@ -56,7 +56,9 @@ def test_analyze_frame_no_hands():
     test_image = np.zeros((480, 640, 3), dtype=np.uint8)
 
     # Mock hands.process to return no hands
-    with patch.object(track_hands.hands, "process") as mock_process, patch("osc_sender.send_message"):
+    with patch.object(track_hands.hands, "process") as mock_process, patch(
+        "osc_sender.send_message"
+    ):
 
         mock_result = MagicMock()
         mock_result.multi_hand_landmarks = None
@@ -78,9 +80,11 @@ def test_analyze_frame_with_hands(mock_hands_process):
     test_image = np.zeros((480, 640, 3), dtype=np.uint8)
 
     # Mock hands.process
-    with patch.object(track_hands.hands, "process", return_value=mock_hands_process), patch(
-        "osc_sender.send_message"
-    ), patch("mediapipe.solutions.drawing_utils.draw_landmarks"):
+    with patch.object(
+        track_hands.hands, "process", return_value=mock_hands_process
+    ), patch("osc_sender.send_message"), patch(
+        "mediapipe.solutions.drawing_utils.draw_landmarks"
+    ):
 
         # Call analyze_frame
         result = track_hands.analyze_frame(test_image, test_image.copy())
@@ -105,12 +109,17 @@ def test_main(mock_destroy, mock_waitkey, mock_imshow, mock_videocapture):
     # Setup mocks
     mock_cap = MagicMock()
     mock_cap.isOpened.return_value = True
-    mock_cap.read.side_effect = [(True, np.zeros((480, 640, 3), dtype=np.uint8)), (False, None)]
+    mock_cap.read.side_effect = [
+        (True, np.zeros((480, 640, 3), dtype=np.uint8)),
+        (False, None),
+    ]
     mock_videocapture.return_value = mock_cap
     mock_waitkey.return_value = 0  # not 'q'
 
     # Mock analyze_frame to avoid actual mediapipe calls
-    with patch("track_hands.analyze_frame", return_value={}), patch("osc_sender.configure") as mock_osc:
+    with patch("track_hands.analyze_frame", return_value={}), patch(
+        "osc_sender.configure"
+    ) as mock_osc:
 
         # Call the main block by directly executing the if __name__ == "__main__" section
         if_main_code = """
@@ -156,7 +165,9 @@ def test_image_dimensions():
     test_image = np.zeros((height, width, 3), dtype=np.uint8)
 
     # Mock hands.process to return no hands
-    with patch.object(track_hands.hands, "process") as mock_process, patch("osc_sender.send_message"):
+    with patch.object(track_hands.hands, "process") as mock_process, patch(
+        "osc_sender.send_message"
+    ):
 
         mock_result = MagicMock()
         mock_result.multi_hand_landmarks = None

@@ -20,12 +20,22 @@ import cv2
 import utils
 
 
-def parse_args() -> argparse.Namespace:
+def parse_args(cli_args=None) -> argparse.Namespace:
+    """
+    Parse command line arguments.
+    
+    Args:
+        cli_args: Optional list of command line arguments to parse instead of sys.argv.
+                  Useful for testing.
+    
+    Returns:
+        Parsed command line arguments.
+    """
     parser = argparse.ArgumentParser(description="Calibrate camera orientation from recording or live camera feed")
     input_group = parser.add_mutually_exclusive_group(required=False)  # Changed to False
     input_group.add_argument("--recording", type=str, help="Path to a recording")
     input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
-    args = parser.parse_args()
+    args = parser.parse_args(cli_args)
 
     # If neither recording nor live is specified, default to live with index 0
     if args.recording is None and args.live is None:
@@ -47,8 +57,15 @@ def save_orientation() -> None:
         json.dump({"flip_horizontal": _state["flip_horizontal"], "flip_vertical": _state["flip_vertical"]}, f)
 
 
-def main() -> None:
-    args = parse_args()
+def main(cli_args=None) -> None:
+    """
+    Run camera orientation calibration.
+    
+    Args:
+        cli_args: Optional list of command line arguments to parse instead of sys.argv.
+                  Useful for testing.
+    """
+    args = parse_args(cli_args)
     image = None
     cap = None
 

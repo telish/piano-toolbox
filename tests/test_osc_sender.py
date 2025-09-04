@@ -27,8 +27,8 @@ def test_configure():
             mock_client.assert_called_once_with("127.0.0.1", test_port)
 
             # Check that global variables were set
-            assert osc_sender.osc_port == test_port
-            assert osc_sender.osc_client is not None
+            assert osc_sender._state["osc_port"] == test_port
+            assert osc_sender._state["osc_client"] is not None
         finally:
             # Restore the original SimpleUDPClient class
             osc_sender.SimpleUDPClient = original_client
@@ -40,7 +40,7 @@ def test_send_message():
     mock_client = MagicMock()
 
     # Replace the global client with our mock
-    with patch.object(osc_sender, "osc_client", mock_client):
+    with patch.object(osc_sender, "_state", {"osc_client": mock_client}):
         # Test sending a message with no args
         osc_sender.send_message("/test/address")
         mock_client.send_message.assert_called_with("/test/address", ())

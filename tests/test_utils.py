@@ -32,7 +32,9 @@ def mock_base_dir(tmp_path):
     mock_keyboard_geometry.write_text('{"mock": "data"}')
 
     mock_camera_orientation = calibration_dir / "camera_orientation.json"
-    mock_camera_orientation.write_text('{"flip_horizontal": true, "flip_vertical": false}')
+    mock_camera_orientation.write_text(
+        '{"flip_horizontal": true, "flip_vertical": false}'
+    )
 
     return tmp_path
 
@@ -42,7 +44,9 @@ def test_set_calibration_base_dir(mock_base_dir):
     set_calibration_base_dir(str(mock_base_dir))
 
     # Verify the paths are correct
-    assert get_keyboard_image_file_path() == os.path.join(str(mock_base_dir), "calibration", "keyboard", "foto.png")
+    assert get_keyboard_image_file_path() == os.path.join(
+        str(mock_base_dir), "calibration", "keyboard", "foto.png"
+    )
     assert get_keyboard_geometry_file_path() == os.path.join(
         str(mock_base_dir), "calibration", "keyboard", "keyboard_geometry.json"
     )

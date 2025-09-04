@@ -105,13 +105,20 @@ def test_draw_tip_on_key(mock_key_outline):
     tip_uv_coords = (0.5, 0.5)  # Center in UV coordinates
 
     # Test without showing bounding box or text
-    result = tip_on_key.draw_tip_on_key(img.copy(), mock_key_outline, tip_xy_coords, tip_uv_coords)
+    result = tip_on_key.draw_tip_on_key(
+        img.copy(), mock_key_outline, tip_xy_coords, tip_uv_coords
+    )
     assert result is not None
     assert np.sum(result) > 0  # Image should have been modified
 
     # Test with showing bounding box and text
     result = tip_on_key.draw_tip_on_key(
-        img.copy(), mock_key_outline, tip_xy_coords, tip_uv_coords, show_bb=True, show_text=True
+        img.copy(),
+        mock_key_outline,
+        tip_xy_coords,
+        tip_uv_coords,
+        show_bb=True,
+        show_text=True,
     )
     assert result is not None
     assert np.sum(result) > 0  # Image should have been modified
@@ -152,9 +159,9 @@ def test_find_tip_on_key(mock_mp_result, mock_key_outline):
     }
 
     # Mock the pixel_coordinates_of_bounding_box function
-    with patch("draw_keys_3d.pixel_coordinates_of_bounding_box", return_value=mock_key_outline), patch(
-        "tip_on_key.point_to_trapezoid_coords", return_value=(0.5, 0.5)
-    ):
+    with patch(
+        "draw_keys_3d.pixel_coordinates_of_bounding_box", return_value=mock_key_outline
+    ), patch("tip_on_key.point_to_trapezoid_coords", return_value=(0.5, 0.5)):
         # Test without output image
         result = tip_on_key.find_tip_on_key(60, note_properties, mp_result)
         assert result is not None
@@ -172,17 +179,23 @@ def test_find_tip_on_key(mock_mp_result, mock_key_outline):
 @patch("cv2.imshow")
 @patch("cv2.waitKey")
 @patch("cv2.destroyAllWindows")
-def test_test_interactive(mock_destroy, mock_waitkey, mock_imshow, mock_callback, mock_window):
+def test_test_interactive(
+    mock_destroy, mock_waitkey, mock_imshow, mock_callback, mock_window
+):
     """Test the test_interactive function runs without errors."""
     # Set up mock returns
     mock_waitkey.side_effect = [ord("q")]  # Exit on first call
 
     # Mock drawing-related functions
-    with patch("draw_keys_3d.init"), patch("utils.get_keyboard_image_file_path", return_value="mock_path.jpg"), patch(
-        "cv2.imread", return_value=np.zeros((300, 300, 3), dtype=np.uint8)
-    ), patch("utils.flip_image", return_value=np.zeros((300, 300, 3), dtype=np.uint8)), patch(
+    with patch("draw_keys_3d.init"), patch(
+        "utils.get_keyboard_image_file_path", return_value="mock_path.jpg"
+    ), patch("cv2.imread", return_value=np.zeros((300, 300, 3), dtype=np.uint8)), patch(
+        "utils.flip_image", return_value=np.zeros((300, 300, 3), dtype=np.uint8)
+    ), patch(
         "draw_keys_3d.pixel_coordinates_of_bounding_box",
-        return_value=np.array([[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32),
+        return_value=np.array(
+            [[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32
+        ),
     ):
 
         # Run the test_interactive function

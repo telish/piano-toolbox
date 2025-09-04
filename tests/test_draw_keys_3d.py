@@ -18,7 +18,9 @@ import utils
 def mock_homography_matrix():
     """Create a mock homography matrix for testing."""
     # Simple identity matrix with some scaling
-    return np.array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float32)
+    return np.array(
+        [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]], dtype=np.float32
+    )
 
 
 @pytest.fixture
@@ -29,7 +31,10 @@ def mock_keypoint_mappings():
         {"pixel": (200, 100), "object": (keyboard_geometry.WHITE_BOTTOM_WIDTH, 0.0)},
         {
             "pixel": (200, 200),
-            "object": (keyboard_geometry.WHITE_BOTTOM_WIDTH, keyboard_geometry.WHITE_HEIGHT),
+            "object": (
+                keyboard_geometry.WHITE_BOTTOM_WIDTH,
+                keyboard_geometry.WHITE_HEIGHT,
+            ),
         },
         {"pixel": (100, 200), "object": (0.0, keyboard_geometry.WHITE_HEIGHT)},
     ]
@@ -76,7 +81,12 @@ def test_init_loads_from_file(mock_keyboard_geometry_file, mock_homography_matri
     """Test that init loads keypoint mappings from file when none are provided."""
     with patch(
         "utils.get_keyboard_geometry_file_path",
-        return_value=os.path.join(mock_keyboard_geometry_file, "calibration", "keyboard", "keyboard_geometry.json"),
+        return_value=os.path.join(
+            mock_keyboard_geometry_file,
+            "calibration",
+            "keyboard",
+            "keyboard_geometry.json",
+        ),
     ), patch("cv2.findHomography", return_value=(mock_homography_matrix, None)):
         draw_keys_3d.init()
         assert draw_keys_3d.homography_matrix is not None
@@ -85,7 +95,9 @@ def test_init_loads_from_file(mock_keyboard_geometry_file, mock_homography_matri
 def test_draw_polygon():
     """Test drawing a polygon on an image."""
     img = np.zeros((300, 300, 3), dtype=np.uint8)
-    points = np.array([[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32)
+    points = np.array(
+        [[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32
+    )
     color = (0, 255, 0)
 
     with patch("cv2.polylines") as mock_polylines:
@@ -130,7 +142,9 @@ def test_draw_key(mock_homography_matrix):
 
     with patch(
         "draw_keys_3d.pixel_coordinates_of_key",
-        return_value=np.array([[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32),
+        return_value=np.array(
+            [[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32
+        ),
     ), patch("draw_keys_3d.draw_polygon"), patch("draw_keys_3d.draw_annotation"):
         result = draw_keys_3d.draw_key(img, midi_pitch, color, "C4")
         assert result is img  # Should return the same image
@@ -154,9 +168,13 @@ def test_draw_annotation():
     midi_pitch = 60  # Middle C
     color = (0, 255, 0)
     annotation = "C4"
-    image_points = np.array([[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32)
+    image_points = np.array(
+        [[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32
+    )
 
-    with patch("cv2.getTextSize", return_value=((30, 20), 5)), patch("cv2.rectangle"), patch("cv2.putText"):
+    with patch("cv2.getTextSize", return_value=((30, 20), 5)), patch(
+        "cv2.rectangle"
+    ), patch("cv2.putText"):
         draw_keys_3d.draw_annotation(img, midi_pitch, color, annotation, image_points)
         # Since we're mocking all cv2 calls, just verify the function completes
 
@@ -167,11 +185,13 @@ def test_draw_annotation_black_key():
     midi_pitch = 61  # C# (black key)
     color = (0, 255, 0)
     annotation = "C#4"
-    image_points = np.array([[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32)
+    image_points = np.array(
+        [[[50, 50]], [[150, 50]], [[150, 150]], [[50, 150]]], dtype=np.float32
+    )
 
-    with patch("keyboard_geometry.black_keys", [61]), patch("cv2.getTextSize", return_value=((30, 20), 5)), patch(
-        "cv2.rectangle"
-    ), patch("cv2.putText"):
+    with patch("keyboard_geometry.BLACK_KEYS", [61]), patch(
+        "cv2.getTextSize", return_value=((30, 20), 5)
+    ), patch("cv2.rectangle"), patch("cv2.putText"):
         draw_keys_3d.draw_annotation(img, midi_pitch, color, annotation, image_points)
         # Since we're mocking all cv2 calls, just verify the function completes
 
@@ -179,12 +199,20 @@ def test_draw_annotation_black_key():
 @patch("cv2.imshow")
 @patch("cv2.waitKey")
 @patch("cv2.destroyAllWindows")
-def test_main(mock_destroy, mock_waitkey, mock_imshow, mock_keyboard_geometry_file, mock_homography_matrix):
+def test_main(
+    mock_destroy,
+    mock_waitkey,
+    mock_imshow,
+    mock_keyboard_geometry_file,
+    mock_homography_matrix,
+):
     """Test the main function runs without errors."""
     # Set up mocks for init and image loading
     with patch("draw_keys_3d.init"), patch(
         "utils.get_keyboard_image_file_path",
-        return_value=os.path.join(mock_keyboard_geometry_file, "calibration", "keyboard", "foto.png"),
+        return_value=os.path.join(
+            mock_keyboard_geometry_file, "calibration", "keyboard", "foto.png"
+        ),
     ), patch("cv2.imread", return_value=np.zeros((300, 300, 3), dtype=np.uint8)), patch(
         "utils.flip_image", return_value=np.zeros((300, 300, 3), dtype=np.uint8)
     ), patch(

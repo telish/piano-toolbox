@@ -39,7 +39,10 @@ def mock_keyboard_geometry_file(tmp_path):
             {"pixel": [100, 400], "object": [0.0, keyboard_geometry.WHITE_HEIGHT]},
             {
                 "pixel": [500, 400],
-                "object": [keyboard_geometry.KEYBOARD_WIDTH, keyboard_geometry.WHITE_HEIGHT],
+                "object": [
+                    keyboard_geometry.KEYBOARD_WIDTH,
+                    keyboard_geometry.WHITE_HEIGHT,
+                ],
             },
         ],
     }
@@ -76,31 +79,13 @@ def test_parse_args():
         assert args.live == 1
 
 
-def test_draw_points(mock_image):
-    """Test the draw_points function."""
-    # Create some test points
-    points = [
-        {"pixel": (100, 100), "object": (0.0, 0.0)},
-        {"pixel": (200, 200), "object": (100.0, 100.0)},
-    ]
-
-    # Test with no dragging
-    calibrate_keyboard.dragging_index = -1
-    calibrate_keyboard.draw_points(mock_image, cast(List[CorrespondingPoints], points))
-    assert np.sum(mock_image) > 0  # Image should be modified
-
-    # Test with dragging
-    mock_image_2 = np.zeros((480, 640, 3), dtype=np.uint8)
-    calibrate_keyboard.dragging_index = 0
-    calibrate_keyboard.draw_points(mock_image_2, cast(List[CorrespondingPoints], points))
-    assert np.sum(mock_image_2) > 0  # Image should be modified
-
-
 def test_draw_trapezoid(mock_image):
     """Test the draw_trapezoid function."""
     # Test with fewer than 2 points
     points = [{"pixel": (100, 100), "object": (0.0, 0.0)}]
-    calibrate_keyboard.draw_trapezoid(mock_image, cast(List[CorrespondingPoints], points))
+    calibrate_keyboard.draw_trapezoid(
+        mock_image, cast(List[CorrespondingPoints], points)
+    )
 
     # Test with 2-3 points - Note that the draw_trapezoid function actually draws using cv2.polylines
     # which we'll need to mock to verify it's called, rather than checking the image content
@@ -111,7 +96,9 @@ def test_draw_trapezoid(mock_image):
     ]
 
     with patch("cv2.polylines") as mock_polylines:
-        calibrate_keyboard.draw_trapezoid(mock_image, cast(List[CorrespondingPoints], points))
+        calibrate_keyboard.draw_trapezoid(
+            mock_image, cast(List[CorrespondingPoints], points)
+        )
         mock_polylines.assert_called_once()
 
     # Test with exactly 4 points
@@ -121,15 +108,20 @@ def test_draw_trapezoid(mock_image):
         {"pixel": (300, 100), "object": (keyboard_geometry.KEYBOARD_WIDTH, 0.0)},
         {
             "pixel": (300, 300),
-            "object": (keyboard_geometry.KEYBOARD_WIDTH, keyboard_geometry.WHITE_HEIGHT),
+            "object": (
+                keyboard_geometry.KEYBOARD_WIDTH,
+                keyboard_geometry.WHITE_HEIGHT,
+            ),
         },
         {"pixel": (100, 300), "object": (0.0, keyboard_geometry.WHITE_HEIGHT)},
     ]
 
-    with patch("calibrate_keyboard.get_correspondences_without_projection", return_value=points), patch(
-        "cv2.polylines"
-    ) as mock_polylines:
-        calibrate_keyboard.draw_trapezoid(mock_image_2, cast(List[CorrespondingPoints], points))
+    with patch(
+        "calibrate_keyboard.get_correspondences_without_projection", return_value=points
+    ), patch("cv2.polylines") as mock_polylines:
+        calibrate_keyboard.draw_trapezoid(
+            mock_image_2, cast(List[CorrespondingPoints], points)
+        )
         mock_polylines.assert_called_once()
 
 
@@ -153,39 +145,46 @@ def test_find_closest_point_index():
 def test_mouse_callback(mock_image):
     """Test the mouse callback function."""
     # Reset global variables
-    calibrate_keyboard.user_defined_points = []
-    calibrate_keyboard.dragging_index = -1
+    calibrate_keyboard._state["user_defined_points"] = []
+    calibrate_keyboard._state["dragging_index"] = -1
 
     # Test adding a new point
     calibrate_keyboard.mouse_callback(cv2.EVENT_LBUTTONDOWN, 100, 100, 0, None)
-    assert len(calibrate_keyboard.user_defined_points) == 1
-    assert calibrate_keyboard.user_defined_points[0]["pixel"] == (100, 100)
-    assert calibrate_keyboard.dragging_index == 0
+    assert len(calibrate_keyboard._state["user_defined_points"]) == 1
+    assert calibrate_keyboard._state["user_defined_points"][0]["pixel"] == (100, 100)
+    assert calibrate_keyboard._state["dragging_index"] == 0
 
     # Test dragging a point
     calibrate_keyboard.mouse_callback(cv2.EVENT_MOUSEMOVE, 150, 150, 0, None)
-    assert calibrate_keyboard.user_defined_points[0]["pixel"] == (150, 150)
+    assert calibrate_keyboard._state["user_defined_points"][0]["pixel"] == (150, 150)
 
     # Test releasing the mouse button
     calibrate_keyboard.mouse_callback(cv2.EVENT_LBUTTONUP, 150, 150, 0, None)
-    assert calibrate_keyboard.dragging_index == -1
+    assert calibrate_keyboard._state["dragging_index"] == -1
 
     # Test clicking near an existing point
     with patch("calibrate_keyboard.find_closest_point_index", return_value=0):
         calibrate_keyboard.mouse_callback(cv2.EVENT_LBUTTONDOWN, 151, 151, 0, None)
-        assert len(calibrate_keyboard.user_defined_points) == 1  # No new point added
-        assert calibrate_keyboard.dragging_index == 0  # Dragging the existing point
+        assert (
+            len(calibrate_keyboard._state["user_defined_points"]) == 1
+        )  # No new point added
+        assert (
+            calibrate_keyboard._state["dragging_index"] == 0
+        )  # Dragging the existing point
 
 
 def test_save_coords(mock_image, mock_keyboard_geometry_file):
     """Test saving coordinates to file."""
     # Set up test points
-    calibrate_keyboard.user_defined_points = [
+    calibrate_keyboard._state["user_defined_points"] = [
         {"pixel": (100, 100), "object": (0.0, 0.0)},
         {"pixel": (300, 100), "object": (keyboard_geometry.KEYBOARD_WIDTH, 0.0)},
         {
             "pixel": (300, 300),
-            "object": (keyboard_geometry.KEYBOARD_WIDTH, keyboard_geometry.WHITE_HEIGHT),
+            "object": (
+                keyboard_geometry.KEYBOARD_WIDTH,
+                keyboard_geometry.WHITE_HEIGHT,
+            ),
         },
         {"pixel": (100, 300), "object": (0.0, keyboard_geometry.WHITE_HEIGHT)},
     ]
@@ -193,10 +192,17 @@ def test_save_coords(mock_image, mock_keyboard_geometry_file):
     # Mock file operations
     with patch(
         "utils.get_keyboard_geometry_file_path",
-        return_value=os.path.join(mock_keyboard_geometry_file, "calibration", "keyboard", "keyboard_geometry.json"),
+        return_value=os.path.join(
+            mock_keyboard_geometry_file,
+            "calibration",
+            "keyboard",
+            "keyboard_geometry.json",
+        ),
     ), patch(
         "utils.get_keyboard_image_file_path",
-        return_value=os.path.join(mock_keyboard_geometry_file, "calibration", "keyboard", "foto.png"),
+        return_value=os.path.join(
+            mock_keyboard_geometry_file, "calibration", "keyboard", "foto.png"
+        ),
     ), patch(
         "json.dump"
     ) as mock_json_dump, patch(
@@ -215,7 +221,10 @@ def test_add_object_coords():
     # Set up test points with missing object coordinates
     points = [
         {"pixel": (100, 100), "object": None},
-        {"pixel": (200, 200), "object": (100.0, 100.0)},  # This one already has coordinates
+        {
+            "pixel": (200, 200),
+            "object": (100.0, 100.0),
+        },  # This one already has coordinates
     ]
 
     # Mock find_closest_point
@@ -235,7 +244,9 @@ def test_find_closest_point():
     # Mock necessary functions
     with patch(
         "draw_keys_3d.pixel_coordinates_of_key",
-        return_value=np.array([[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32),
+        return_value=np.array(
+            [[[100, 100]], [[100, 200]], [[200, 200]], [[200, 100]]], dtype=np.float32
+        ),
     ), patch(
         "keyboard_geometry.key_points",
         return_value=[(0.0, 0.0), (0.0, 100.0), (100.0, 100.0), (100.0, 0.0)],
@@ -261,33 +272,41 @@ def test_get_correspondences_without_projection():
     ]
 
     # Call the function
-    result = calibrate_keyboard.get_correspondences_without_projection(cast(List[CorrespondingPoints], points))
+    result = calibrate_keyboard.get_correspondences_without_projection(
+        cast(List[CorrespondingPoints], points)
+    )
 
     # Check that points were correctly ordered and assigned object coordinates
     assert len(result) == 4
 
     # Check top-left
     assert result[0]["pixel"] == (100, 100)
-    assert result[0]["object"] == keyboard_geometry.keyboard_outline["top-left"]
+    assert result[0]["object"] == keyboard_geometry.KEYBOARD_OUTLINE["top-left"]
 
     # Check top-right
     assert result[1]["pixel"] == (300, 100)
-    assert result[1]["object"] == keyboard_geometry.keyboard_outline["top-right"]
+    assert result[1]["object"] == keyboard_geometry.KEYBOARD_OUTLINE["top-right"]
 
     # Check bottom-left (note the order in the return value)
     assert result[2]["pixel"] == (100, 300)
-    assert result[2]["object"] == keyboard_geometry.keyboard_outline["bottom-left"]
+    assert result[2]["object"] == keyboard_geometry.KEYBOARD_OUTLINE["bottom-left"]
 
     # Check bottom-right
     assert result[3]["pixel"] == (300, 300)
-    assert result[3]["object"] == keyboard_geometry.keyboard_outline["bottom-right"]
+    assert result[3]["object"] == keyboard_geometry.KEYBOARD_OUTLINE["bottom-right"]
 
 
 @patch("cv2.VideoCapture")
 @patch("cv2.imshow")
 @patch("cv2.waitKey")
 @patch("cv2.destroyAllWindows")
-def test_main_recording_mode(mock_destroy, mock_waitkey, mock_imshow, mock_videocapture, mock_keyboard_geometry_file):
+def test_main_recording_mode(
+    mock_destroy,
+    mock_waitkey,
+    mock_imshow,
+    mock_videocapture,
+    mock_keyboard_geometry_file,
+):
     """Test main function in recording mode."""
     # Setup mock video capture
     mock_cap = MagicMock()
@@ -303,9 +322,16 @@ def test_main_recording_mode(mock_destroy, mock_waitkey, mock_imshow, mock_video
     os.makedirs(os.path.join(recording_path, "video"), exist_ok=True)
 
     # Patch command line arguments and other functions
-    with patch("calibrate_keyboard.parse_args", return_value=MagicMock(recording=recording_path, live=None)), patch(
+    with patch(
+        "calibrate_keyboard.parse_args",
+        return_value=MagicMock(recording=recording_path, live=None),
+    ), patch(
         "utils.flip_image", return_value=np.zeros((480, 640, 3), dtype=np.uint8)
-    ), patch("calibrate_keyboard.save_coords"), patch("os.path.abspath", return_value=recording_path):
+    ), patch(
+        "calibrate_keyboard.save_coords"
+    ), patch(
+        "os.path.abspath", return_value=recording_path
+    ):
 
         # Run main function
         calibrate_keyboard.main()

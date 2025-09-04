@@ -31,7 +31,12 @@ def test_keyboard_geometry_load_black_height(mock_keyboard_geometry_file):
     """Test that black_height is correctly loaded from the keyboard_geometry.json file."""
     with patch(
         "utils.get_keyboard_geometry_file_path",
-        return_value=os.path.join(mock_keyboard_geometry_file, "calibration", "keyboard", "keyboard_geometry.json"),
+        return_value=os.path.join(
+            mock_keyboard_geometry_file,
+            "calibration",
+            "keyboard",
+            "keyboard_geometry.json",
+        ),
     ):
         # Reset the module to ensure black_height is reloaded
         black_height = keyboard_geometry.load_black_height()
@@ -40,7 +45,9 @@ def test_keyboard_geometry_load_black_height(mock_keyboard_geometry_file):
 
 def test_keyboard_geometry_default_black_height():
     """Test that default black_height is used when file doesn't exist."""
-    with patch("utils.get_keyboard_geometry_file_path", return_value="/nonexistent/path"):
+    with patch(
+        "utils.get_keyboard_geometry_file_path", return_value="/nonexistent/path"
+    ):
         black_height = keyboard_geometry.load_black_height()
         assert black_height == 100.0
 
@@ -107,7 +114,7 @@ def test_keyboard_geometry_re_init():
 @pytest.mark.parametrize("midi_pitch", [21, 60, 88, 108])  # Test various keys
 def test_keyboard_geometry_white_keys(midi_pitch):
     """Test white keys data is consistent."""
-    if midi_pitch in keyboard_geometry.white_keys:
+    if midi_pitch in keyboard_geometry.WHITE_KEYS:
         points = keyboard_geometry.key_points(midi_pitch)
         # Check that points form a valid polygon
         assert len(points) == 8
@@ -122,7 +129,7 @@ def test_keyboard_geometry_white_keys(midi_pitch):
 @pytest.mark.parametrize("midi_pitch", [22, 61, 73, 106])  # Test various black keys
 def test_keyboard_geometry_black_keys(midi_pitch):
     """Test black keys data is consistent."""
-    if midi_pitch in keyboard_geometry.black_keys:
+    if midi_pitch in keyboard_geometry.BLACK_KEYS:
         points = keyboard_geometry.key_points(midi_pitch)
         # Check that points form a valid polygon
         assert len(points) == 4
@@ -158,14 +165,21 @@ def test_keyboard_geometry_main_function(mock_waitkey, mock_imshow):
 def test_keyboard_outline_consistent():
     """Test that keyboard_outline is consistent with other constants."""
     # The keyboard width should match the expected total width
-    expected_width = len(keyboard_geometry.white_keys) * keyboard_geometry.WHITE_BOTTOM_WIDTH
-    assert keyboard_geometry.keyboard_outline["top-right"][0] == keyboard_geometry.KEYBOARD_WIDTH
-    assert abs(expected_width - keyboard_geometry.KEYBOARD_WIDTH) < 0.1  # Allow for small floating point differences
+    expected_width = (
+        len(keyboard_geometry.WHITE_KEYS) * keyboard_geometry.WHITE_BOTTOM_WIDTH
+    )
+    assert (
+        keyboard_geometry.KEYBOARD_OUTLINE["top-right"][0]
+        == keyboard_geometry.KEYBOARD_WIDTH
+    )
+    assert (
+        abs(expected_width - keyboard_geometry.KEYBOARD_WIDTH) < 0.1
+    )  # Allow for small floating point differences
 
 
 def test_white_and_black_keys_complete():
     """Test that white_keys and black_keys together make up the complete keyboard."""
-    all_keys = keyboard_geometry.white_keys + keyboard_geometry.black_keys
+    all_keys = keyboard_geometry.WHITE_KEYS + keyboard_geometry.BLACK_KEYS
     all_keys.sort()
     expected_keys = list(range(21, 109))  # MIDI notes 21-108
     assert all_keys == expected_keys
