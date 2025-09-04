@@ -33,10 +33,12 @@ def plot_inter_frame_intervals(data: list[dict], bins: int = 50):
     plt.grid(True, alpha=0.3)
     plt.show()
 
+
 def main():
     timestamps_path = "recording/video/timestamps.json"
     timestamps = parse_timestamps(timestamps_path)
     plot_inter_frame_intervals(timestamps)
+
 
 if __name__ == "__main__":
     main()

@@ -72,16 +72,24 @@ def analyze_frame(img_input, img_output=None):
                     img_output,
                     hand_landmarks,
                     mp.solutions.hands.HAND_CONNECTIONS,
-                    mp.solutions.drawing_utils.DrawingSpec(color=(0, 0, 200), thickness=2, circle_radius=2),
-                    mp.solutions.drawing_utils.DrawingSpec(color=(255, 255, 255), thickness=2),
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(0, 0, 200), thickness=2, circle_radius=2
+                    ),
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(255, 255, 255), thickness=2
+                    ),
                 )
             elif label == "right":
                 mp.solutions.drawing_utils.draw_landmarks(
                     img_output,
                     hand_landmarks,
                     mp.solutions.hands.HAND_CONNECTIONS,
-                    mp.solutions.drawing_utils.DrawingSpec(color=(0, 200, 0), thickness=2, circle_radius=2),
-                    mp.solutions.drawing_utils.DrawingSpec(color=(255, 255, 255), thickness=2),
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(0, 200, 0), thickness=2, circle_radius=2
+                    ),
+                    mp.solutions.drawing_utils.DrawingSpec(
+                        color=(255, 255, 255), thickness=2
+                    ),
                 )
 
             osc_sender.send_message(f"/{label}/landmarks", *flat_coords)
@@ -94,7 +102,9 @@ def analyze_frame(img_input, img_output=None):
     return result
 
 
-hands = mp.solutions.hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
+hands = mp.solutions.hands.Hands(
+    min_detection_confidence=0.7, min_tracking_confidence=0.5
+)
 
 
 if __name__ == "__main__":

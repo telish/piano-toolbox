@@ -37,6 +37,7 @@ def _point_distance_to_quad(point: tuple[int, int], quad: npt.NDArray[Any]) -> f
 
 class AnalysisHub:
     """Coordinates analysis results between modules."""
+
     def __init__(self):
         self.last_midi_result = {}
         self.current_notes = {}

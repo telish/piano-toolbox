@@ -47,9 +47,13 @@ class HandConstraints(object):
 
         for i in range(128):
             if self.sounding_notes[i]:
-                if (i <= lowest + comfortable_hand_span) and (i < highest - comfortable_hand_span):
+                if (i <= lowest + comfortable_hand_span) and (
+                    i < highest - comfortable_hand_span
+                ):
                     self.left_hand_notes.append(i)
-                elif (i > lowest + comfortable_hand_span) and (i >= highest - comfortable_hand_span):
+                elif (i > lowest + comfortable_hand_span) and (
+                    i >= highest - comfortable_hand_span
+                ):
                     self.right_hand_notes.append(i)
 
     def _lowest_note(self):
@@ -100,18 +104,26 @@ class KalmanMapper(object):
                     self.saved_result.append(("right", 1.0))
 
         if not assign_left and not assign_right:
-            delta_rh = abs(self.right_hand_pos - event.pitch) / math.sqrt(self.right_hand_variance)
-            delta_lh = abs(self.left_hand_pos - event.pitch) / math.sqrt(self.left_hand_variance)
+            delta_rh = abs(self.right_hand_pos - event.pitch) / math.sqrt(
+                self.right_hand_variance
+            )
+            delta_lh = abs(self.left_hand_pos - event.pitch) / math.sqrt(
+                self.left_hand_variance
+            )
             assign_right = delta_lh > delta_rh
             assign_left = not assign_right
 
             if assign_left:
-                normal = scipy.stats.norm(self.left_hand_pos, math.sqrt(self.left_hand_variance))
+                normal = scipy.stats.norm(
+                    self.left_hand_pos, math.sqrt(self.left_hand_variance)
+                )
                 p = normal.pdf(event.pitch)
                 assert p <= 1
                 self.saved_result.append(("left", p))
             else:
-                normal = scipy.stats.norm(self.right_hand_pos, math.sqrt(self.right_hand_variance))
+                normal = scipy.stats.norm(
+                    self.right_hand_pos, math.sqrt(self.right_hand_variance)
+                )
                 p = normal.pdf(event.pitch)
                 assert p <= 1
                 self.saved_result.append(("right", p))
@@ -123,10 +135,14 @@ class KalmanMapper(object):
                 self.left_hand_variance += delta * variance_per_second
 
             self.left_hand_pos += (
-                self.left_hand_variance / (self.left_hand_variance + midi_variance) * (event.pitch - self.left_hand_pos)
+                self.left_hand_variance
+                / (self.left_hand_variance + midi_variance)
+                * (event.pitch - self.left_hand_pos)
             )
             self.left_hand_variance -= (
-                self.left_hand_variance / (self.left_hand_variance + midi_variance) * self.left_hand_variance
+                self.left_hand_variance
+                / (self.left_hand_variance + midi_variance)
+                * self.left_hand_variance
             )
             self.time_last_lh = event.when
             self.last_was_left_hand = True
@@ -142,7 +158,9 @@ class KalmanMapper(object):
                 * (event.pitch - self.right_hand_pos)
             )
             self.right_hand_variance -= (
-                self.right_hand_variance / (self.right_hand_variance + midi_variance) * self.right_hand_variance
+                self.right_hand_variance
+                / (self.right_hand_variance + midi_variance)
+                * self.right_hand_variance
             )
             self.time_last_rh = event.when
             self.last_was_left_hand = False

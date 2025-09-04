@@ -1,4 +1,5 @@
 """Functions to find fingertip position on a piano key and convert to trapezoid coordinates."""
+
 import cv2
 import numpy as np
 
@@ -25,7 +26,9 @@ def find_tip_on_key(midi_pitch, note_properties, mp_result, img_output=None):
     return u, v
 
 
-def draw_tip_on_key(img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb=False, show_text=False):
+def draw_tip_on_key(
+    img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb=False, show_text=False
+):
     """
     Draw a key and a fingertip point with the trapezoid coordinates.
     """

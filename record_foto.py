@@ -57,7 +57,9 @@ while True:
     color = (255, 255, 255)  # White text
 
     # Get text size to position it and create background
-    (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
+    (text_width, text_height), baseline = cv2.getTextSize(
+        text, font, font_scale, thickness
+    )
 
     # Position at the bottom of the frame
     text_x = 10

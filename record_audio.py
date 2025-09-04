@@ -57,6 +57,8 @@ signal.signal(signal.SIGINT, signal_handler)
 
 # Start recording
 print("record-audio: Recording. Press Ctrl + C to stop.")
-with sd.InputStream(samplerate=SAMPLE_RATE, channels=CHANNELS, dtype=FORMAT_PCM, callback=callback):
+with sd.InputStream(
+    samplerate=SAMPLE_RATE, channels=CHANNELS, dtype=FORMAT_PCM, callback=callback
+):
     while True:
         sd.sleep(100)  # Keep process running

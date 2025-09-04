@@ -9,10 +9,18 @@ import argparse  # Import argparse for command-line arguments
 import shlex  # For splitting argument strings safely
 
 # Parse command-line arguments
-parser = argparse.ArgumentParser(description="Start recording processes with arguments.")
-parser.add_argument("--args-video", type=str, default="", help="Arguments for record_video.py")
-parser.add_argument("--args-audio", type=str, default="", help="Arguments for record_audio.py")
-parser.add_argument("--args-midi", type=str, default="", help="Arguments for record_midi.py")
+parser = argparse.ArgumentParser(
+    description="Start recording processes with arguments."
+)
+parser.add_argument(
+    "--args-video", type=str, default="", help="Arguments for record_video.py"
+)
+parser.add_argument(
+    "--args-audio", type=str, default="", help="Arguments for record_audio.py"
+)
+parser.add_argument(
+    "--args-midi", type=str, default="", help="Arguments for record_midi.py"
+)
 args = parser.parse_args()
 
 # Delete 'recording' directory if it exists

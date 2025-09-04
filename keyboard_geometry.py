@@ -36,7 +36,9 @@ def load_black_height() -> float:
 
 
 # Load black_height from JSON or use default
-black_height = load_black_height()  # Whenever you change this value you have to re_init()
+black_height = (
+    load_black_height()
+)  # Whenever you change this value you have to re_init()
 
 BLACK_WIDTH: Final[float] = 12.7
 C_TOP_WIDTH: Final[float] = 15.05
@@ -79,7 +81,10 @@ def pitch_class(midi_pitch: int) -> str:
     pitch_classes = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
     return pitch_classes[c]
 
+
 left_at_bottom, left_at_top, right_at_bottom, right_at_top = [], [], [], []
+
+
 def re_init() -> None:
     global left_at_bottom, left_at_top, right_at_bottom, right_at_top
     left_at_top = [0.0]
@@ -207,7 +212,9 @@ def main():
     # Draw keys and labels
     for i, pitch in enumerate(range(21, 109)):
         # Get points and add y-offset
-        key_pts = np.array([key_points(pitch)], dtype=np.int32).reshape(-1, 1, 2)  # key_pts.shape = (n, 1, 2)
+        key_pts = np.array([key_points(pitch)], dtype=np.int32).reshape(
+            -1, 1, 2
+        )  # key_pts.shape = (n, 1, 2)
 
         cv2.polylines(img, [key_pts], isClosed=True, color=(0, 200, 0), thickness=2)
 
@@ -223,7 +230,9 @@ def main():
         )
 
         # Also shift bounding box
-        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32).reshape(-1, 1, 2)  # key_pts.shape = (n, 1, 2)
+        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32).reshape(
+            -1, 1, 2
+        )  # key_pts.shape = (n, 1, 2)
         box_pts[:, 0, 1] += int(WHITE_HEIGHT + 2)
 
         cv2.polylines(img, [box_pts], isClosed=True, color=(200, 0, 0), thickness=2)
