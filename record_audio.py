@@ -1,12 +1,13 @@
 """Records audio from the default microphone and saves it as a WAV file."""
 
-import wave
+import argparse
 import os
 import signal
 import sys
-import argparse
+import wave
 
 import numpy as np
+import numpy.typing as npt
 import sounddevice as sd
 
 SAMPLE_RATE = 48000  # 48 kHz
@@ -18,13 +19,13 @@ audio_data = []
 
 
 # Signal handler to stop recording on Ctrl + C
-def signal_handler(sig, frame):
+def signal_handler(_sig: int, _frame: object) -> None:
     print("\nrecord-audio.py: Stopping")
     save_wav()
     sys.exit(0)
 
 
-def save_wav(output_dir="recording/audio"):
+def save_wav(output_dir: str = "recording/audio") -> None:
     if len(audio_data) == 0:
         return
 
@@ -45,13 +46,11 @@ def save_wav(output_dir="recording/audio"):
 
 
 # Callback function for non-blocking recording
-def callback(indata, frames, time, status):
-    if status:
-        print(status, file=sys.stderr)
+def callback(indata: npt.NDArray[np.float32], _frames, _time, _status) -> None:
     audio_data.append(indata.copy())
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Record audio from microphone")
     parser.add_argument(
         "--output-dir",
@@ -62,7 +61,7 @@ def parse_args():
     return parser.parse_args()
 
 
-def main(output_dir=None):
+def main(output_dir: str | None = None) -> None:
     """
     Start recording audio.
 
@@ -96,6 +95,7 @@ def main(output_dir=None):
             while True:
                 sd.sleep(100)  # Keep process running
     except KeyboardInterrupt:
+        assert output_dir is not None
         save_wav(output_dir)
 
 

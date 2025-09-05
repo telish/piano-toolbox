@@ -1,12 +1,11 @@
 """Record MIDI messages from a specified input port and save them to a text file."""
 
-import os
-import time
 import argparse  # For command-line arguments
+import os
 import sys
+import time
 
 import mido
-
 
 # Parse command-line arguments
 parser = argparse.ArgumentParser(description="Record MIDI messages from input port.")

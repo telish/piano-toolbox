@@ -1,10 +1,9 @@
-import os
-import cv2
 import json
-from typing import Any, Optional
+import os
+from typing import Any
 
+import cv2
 import numpy.typing as npt
-
 
 _calibration_base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -37,7 +36,7 @@ def retrieve_camera_orientation_file_path() -> str:
 flip_horizontal, flip_vertical = False, False
 
 
-def load_flip_settings():
+def load_flip_settings() -> None:
     global flip_vertical, flip_horizontal
     json_path = os.path.join(
         _calibration_base_dir, "calibration", "camera_orientation.json"
@@ -69,7 +68,7 @@ def add_text_to_image(
     thickness: int = 2,
     text_color: tuple[int, int, int] = (255, 255, 255),
     bg_color: tuple[int, int, int] = (0, 0, 0),
-    max_text_width: Optional[int] = None,
+    max_text_width: int | None = None,
 ) -> npt.NDArray[Any]:
     """
     Add multiline text to an image with background, supporting both user-defined

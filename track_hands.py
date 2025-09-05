@@ -1,6 +1,8 @@
-# type: ignore[attr-defined]
+from typing import Any, TypedDict
+
 import cv2
 import mediapipe as mp
+import numpy.typing as npt
 
 import osc_sender
 
@@ -22,7 +24,14 @@ finger_to_tip_index = {
 image_height_px, image_width_px = 0, 0
 
 
-def analyze_frame(img_input, img_output=None):
+class TrackingResult(TypedDict):
+    left_visible: bool
+    right_visible: bool
+    left_landmarks_xyz: tuple[list[float], list[float], list[float]] | None
+    right_landmarks_xyz: tuple[list[float], list[float], list[float]] | None
+
+
+def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | None = None) -> TrackingResult:
     global image_height_px, image_width_px
     image_height_px, image_width_px, _ = img_input.shape
 
@@ -32,7 +41,7 @@ def analyze_frame(img_input, img_output=None):
     # Process the frame and get results
     mp_results = hands.process(rgb_frame)
 
-    result = {
+    result: TrackingResult = {
         "left_visible": False,
         "right_visible": False,
         "left_landmarks_xyz": None,
@@ -72,39 +81,29 @@ def analyze_frame(img_input, img_output=None):
                     img_output,
                     hand_landmarks,
                     mp.solutions.hands.HAND_CONNECTIONS,
-                    mp.solutions.drawing_utils.DrawingSpec(
-                        color=(0, 0, 200), thickness=2, circle_radius=2
-                    ),
-                    mp.solutions.drawing_utils.DrawingSpec(
-                        color=(255, 255, 255), thickness=2
-                    ),
+                    mp.solutions.drawing_utils.DrawingSpec(color=(0, 0, 200), thickness=2, circle_radius=2),
+                    mp.solutions.drawing_utils.DrawingSpec(color=(255, 255, 255), thickness=2),
                 )
             elif label == "right":
                 mp.solutions.drawing_utils.draw_landmarks(
                     img_output,
                     hand_landmarks,
                     mp.solutions.hands.HAND_CONNECTIONS,
-                    mp.solutions.drawing_utils.DrawingSpec(
-                        color=(0, 200, 0), thickness=2, circle_radius=2
-                    ),
-                    mp.solutions.drawing_utils.DrawingSpec(
-                        color=(255, 255, 255), thickness=2
-                    ),
+                    mp.solutions.drawing_utils.DrawingSpec(color=(0, 200, 0), thickness=2, circle_radius=2),
+                    mp.solutions.drawing_utils.DrawingSpec(color=(255, 255, 255), thickness=2),
                 )
 
             osc_sender.send_message(f"/{label}/landmarks", *flat_coords)
 
     if not result["left_visible"]:
-        osc_sender.send_message(f"/left/visible", 0)
+        osc_sender.send_message("/left/visible", 0)
     if not result["right_visible"]:
-        osc_sender.send_message(f"/right/visible", 0)
+        osc_sender.send_message("/right/visible", 0)
 
     return result
 
 
-hands = mp.solutions.hands.Hands(
-    min_detection_confidence=0.7, min_tracking_confidence=0.5
-)
+hands = mp.solutions.hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
 
 
 if __name__ == "__main__":

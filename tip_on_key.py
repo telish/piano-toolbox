@@ -1,14 +1,22 @@
 """Functions to find fingertip position on a piano key and convert to trapezoid coordinates."""
 
+from typing import Any
+
 import cv2
 import numpy as np
+import numpy.typing as npt
 
-import utils
 import draw_keys_3d
 import track_hands
+import utils
 
 
-def find_tip_on_key(midi_pitch, note_properties, mp_result, img_output=None):
+def find_tip_on_key(
+    midi_pitch: int,
+    note_properties: dict,
+    mp_result: dict,
+    img_output: npt.NDArray[Any] | None = None,
+) -> tuple[float, float] | None:
     hand = note_properties["hand"]
     finger = note_properties["finger"]
     if hand is None or finger is None:
@@ -27,8 +35,13 @@ def find_tip_on_key(midi_pitch, note_properties, mp_result, img_output=None):
 
 
 def draw_tip_on_key(
-    img, key_bounding_box, tip_xy_coords, tip_uv_coords, show_bb=False, show_text=False
-):
+    img: npt.NDArray[Any],
+    key_bounding_box: npt.NDArray[Any],
+    tip_xy_coords: tuple[float, float],
+    tip_uv_coords: tuple[float, float],
+    show_bb: bool = False,
+    show_text: bool = False,
+) -> npt.NDArray[Any]:
     """
     Draw a key and a fingertip point with the trapezoid coordinates.
     """
@@ -90,7 +103,9 @@ def draw_tip_on_key(
     return img
 
 
-def point_to_trapezoid_coords(point, trapezoid):
+def point_to_trapezoid_coords(
+    point: tuple[float, float], trapezoid: npt.NDArray[Any]
+) -> tuple[float, float]:
     """
     Calculate the natural coordinates (u,v) of a point inside a trapezoid.
 
@@ -153,7 +168,7 @@ def point_to_trapezoid_coords(point, trapezoid):
     return u, v
 
 
-def test_interactive():
+def test_interactive() -> None:
     """Interactive test with mouse clicks."""
     draw_keys_3d.init()
 
@@ -170,7 +185,7 @@ def test_interactive():
     midi_pitch = 60
 
     # Mouse click handler
-    def mouse_callback(event, x, y, _flags, _param):
+    def mouse_callback(event: int, x: int, y: int, _flags: int, _param: object) -> None:
         if event == cv2.EVENT_LBUTTONDOWN:
             img_copy = img.copy()
             key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)

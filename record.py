@@ -1,32 +1,24 @@
 """Start recording video, audio, and MIDI processes with forwarded arguments."""
 
-import os
-import shutil
-import subprocess
-import signal
-import time
 import argparse  # Import argparse for command-line arguments
+import os
 import shlex  # For splitting argument strings safely
+import shutil
+import signal
+import subprocess
+import time
 
 
-def parse_args():
+def parse_args() -> argparse.Namespace:
     # Parse command-line arguments
-    parser = argparse.ArgumentParser(
-        description="Start recording processes with arguments."
-    )
-    parser.add_argument(
-        "--args-video", type=str, default="", help="Arguments for record_video.py"
-    )
-    parser.add_argument(
-        "--args-audio", type=str, default="", help="Arguments for record_audio.py"
-    )
-    parser.add_argument(
-        "--args-midi", type=str, default="", help="Arguments for record_midi.py"
-    )
+    parser = argparse.ArgumentParser(description="Start recording processes with arguments.")
+    parser.add_argument("--args-video", type=str, default="", help="Arguments for record_video.py")
+    parser.add_argument("--args-audio", type=str, default="", help="Arguments for record_audio.py")
+    parser.add_argument("--args-midi", type=str, default="", help="Arguments for record_midi.py")
     return parser.parse_args()
 
 
-def main(args_video="", args_audio="", args_midi=""):
+def main(args_video: str = "", args_audio: str = "", args_midi: str = "") -> None:
     """
     Start recording processes.
 
@@ -55,7 +47,7 @@ def main(args_video="", args_audio="", args_midi=""):
     record_midi = subprocess.Popen(midi_cmd)
     record_audio = subprocess.Popen(audio_cmd)
 
-    def stop_processes(sig, frame):
+    def stop_processes(_sig: int, _frame: object) -> None:
         print("Stopping processes...")
         record_video.send_signal(signal.SIGINT)
         record_midi.send_signal(signal.SIGINT)
@@ -73,7 +65,7 @@ def main(args_video="", args_audio="", args_midi=""):
         while True:
             time.sleep(1)  # Keep the script running
     except KeyboardInterrupt:
-        stop_processes(None, None)
+        stop_processes(0, None)
 
 
 if __name__ == "__main__":

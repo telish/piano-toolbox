@@ -1,0 +1,7 @@
+mido
+python-rtmidi
+mediapipe
+sounddevice
+shapely
+python-osc
+pytest

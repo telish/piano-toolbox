@@ -1,19 +1,17 @@
 """Simulate recording by playing back recorded video and MIDI messages."""
 
-import json
-import os
-
 # import time
 import argparse  # For command-line arguments
-import time
+import json
+import os
 
 import cv2
 import mido
 
-from analysis_hub import hub
 import draw_keys_3d
-import utils
 import osc_sender
+import utils
+from analysis_hub import hub
 
 
 def parse_midi_msgs(filename):
@@ -27,9 +25,7 @@ def parse_midi_msgs(filename):
                     timestamp = float(timestamp)  # Convert to float
                     # Convert text to mido Message
                     msg = mido.Message.from_str(msg_text)
-                    result.append(
-                        {"timestamp": timestamp, "type": "midi", "message": msg}
-                    )
+                    result.append({"timestamp": timestamp, "type": "midi", "message": msg})
                 except ValueError as e:
                     print(f"Error parsing line: {line} -> {e}")
     except FileNotFoundError:
@@ -112,10 +108,7 @@ def handle_keyboard_input(img):
     global skip_to_next_note
     stop = not skip_to_next_note["should_skip_to_end"] and (
         (not skip_to_next_note["should_skip_to_next_note"])
-        or (
-            skip_to_next_note["should_skip_to_next_note"]
-            and skip_to_next_note["note_received"]
-        )
+        or (skip_to_next_note["should_skip_to_next_note"] and skip_to_next_note["note_received"])
     )
     if stop:
         # Draw instructions directly on the image
@@ -157,7 +150,7 @@ def get_all_events(recording_base):
 
 def process_midi(event):
     print(f"{event['timestamp']}: {event['message']}")
-    hub.process_midi_event(event)
+    hub.process_midi_event(event["timestamp"], event["message"])
     res = hub.last_midi_result
     if hub.last_midi_result["msg.type"] == "note_on":
         print(res["hand"].capitalize(), res["finger"])
@@ -199,7 +192,7 @@ def process_video_frame(event, video_processor):
 
     # Time the frame processing
     # start_time = time.time()
-    hub.process_frame(img)
+    hub.process_frame(event["timestamp"], img)
     # processing_time = time.time() - start_time
     # print(f"Frame processing time: {processing_time*1000:.2f} ms")
 

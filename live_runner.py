@@ -1,35 +1,33 @@
+import argparse
+import threading
+import time
+from typing import Any
+
 import cv2
 import mido
-import time
-import os
-import datetime
-import threading
-import numpy as np
-from pathlib import Path
-import json
-import argparse
+import numpy.typing as npt
 
-from analysis_hub import hub
 import draw_keys_3d
+from analysis_hub import hub
 
 
 # Define processing functions at the top of the file
-def process_midi_event(event):
+def process_midi_event(event: mido.Message) -> dict:
     """Process a single MIDI event and pass it to the analysis hub."""
     # Measure time spent in MIDI processing
     midi_start = time.time()
-    hub.process_midi_event(event)
+    hub.process_midi_event(midi_start, event)
     midi_process_time = time.time() - midi_start
     if midi_process_time > 0.01:  # Log only if processing takes >10ms
-        print(f"MIDI processing time: {midi_process_time*1000:.2f} ms")
+        print(f"MIDI processing time: {midi_process_time * 1000:.2f} ms")
     return hub.last_midi_result
 
 
-def process_frame(frame):
+def process_frame(frame: npt.NDArray[Any]) -> dict:
     """Process a single video frame and pass it to the analysis hub."""
     # Time the frame processing
     start_time = time.time()
-    hub.process_frame(frame)
+    hub.process_frame(start_time, frame)
     processing_time = time.time() - start_time
 
     # Get the processed output
@@ -51,7 +49,7 @@ FPS = 30
 
 
 class MidiProcessor:
-    def __init__(self, port_name=None):
+    def __init__(self, port_name: str | None = None) -> None:
         self.port_name = port_name
         self.processing = False
         self.start_time = None
@@ -60,9 +58,9 @@ class MidiProcessor:
         self.last_poll_time = 0
         self.poll_interval = 0.01
 
-    def get_input_port(self):
+    def get_input_port(self) -> str:
         """Get the MIDI input port, either specified or first available."""
-        available_ports = mido.get_input_names()
+        available_ports = mido.get_input_names()  # type: ignore
         if not available_ports:
             raise RuntimeError("No MIDI input ports available")
 
@@ -89,11 +87,10 @@ class MidiProcessor:
                     raise ValueError(f"MIDI port '{self.port_name}' not found")
                 return self.port_name
 
-    def start_processing(self):
+    def start_processing(self) -> None:
         """Start processing MIDI messages without recording."""
         port_name = self.get_input_port()
-        self.input_port = mido.open_input(port_name)
-        self.start_time = time.time()
+        self.input_port = mido.open_input(port_name)  # type: ignore
         self.processing = True
 
         # Start the callback thread
@@ -103,7 +100,7 @@ class MidiProcessor:
 
         print(f"Processing MIDI from {port_name}...")
 
-    def _process_callback(self):
+    def _process_callback(self) -> None:
         """Thread function to process MIDI messages."""
         while self.processing:
             # Only poll at specific intervals to reduce CPU usage
@@ -115,16 +112,11 @@ class MidiProcessor:
 
             self.last_poll_time = current_time
 
-            for msg in self.input_port.iter_pending():
+            for msg in self.input_port.iter_pending():  # type: ignore
                 if not msg.is_meta:
-                    assert self.start_time is not None
-                    timestamp = time.time() - self.start_time
-                    event = {"time": timestamp, "message": msg}
-                    print(event)
-                    # Use the process_midi_event function
-                    process_midi_event(event)
+                    process_midi_event(msg)
 
-    def stop_processing(self):
+    def stop_processing(self) -> None:
         """Stop processing and close the port."""
         self.processing = False
         if self.midi_thread:
@@ -137,7 +129,13 @@ class MidiProcessor:
 
 
 class VideoProcessor:
-    def __init__(self, device, width=FRAME_WIDTH, height=FRAME_HEIGHT, fps=FPS):
+    def __init__(
+        self,
+        device: int,
+        width: int = FRAME_WIDTH,
+        height: int = FRAME_HEIGHT,
+        fps: int = FPS,
+    ) -> None:
         self.device = device
         self.width = width
         self.height = height
@@ -147,7 +145,7 @@ class VideoProcessor:
         self.frame_count = 0
         self.display_window_name = "Video Processing"
 
-    def start_processing(self):
+    def start_processing(self) -> None:
         """Start processing video."""
         self.cap = cv2.VideoCapture(self.device)
         if not self.cap.isOpened():
@@ -166,15 +164,13 @@ class VideoProcessor:
 
         # Create a window for displaying the video
         cv2.namedWindow(self.display_window_name, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(
-            self.display_window_name, 1280, 720
-        )  # Resizable window with initial size
+        cv2.resizeWindow(self.display_window_name, 1280, 720)  # Resizable window with initial size
 
         self.processing = True
         self.frame_count = 0
         print("Video processing started")
 
-    def process_frame(self):
+    def process_frame(self) -> bool:
         """Process a single video frame."""
         if not self.processing or not self.cap or not self.cap.isOpened():
             return False
@@ -190,11 +186,11 @@ class VideoProcessor:
         cv2.imshow(self.display_window_name, result["frame"])
 
         self.frame_count += 1
-        print(f"Frame processing time: {result['processing_time']*1000:.2f} ms")
+        print(f"Frame processing time: {result['processing_time'] * 1000:.2f} ms")
 
         return True
 
-    def stop_processing(self):
+    def stop_processing(self) -> None:
         """Stop processing and release resources."""
         self.processing = False
 
@@ -208,20 +204,17 @@ class VideoProcessor:
         print(f"Video processing stopped after {self.frame_count} frames")
 
 
-def main():
+def main() -> None:
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Live processing of MIDI and video.")
     parser.add_argument("--camera", type=int, default=0, help="Camera device index")
-    parser.add_argument(
-        "--midi-port", type=str, default=None, help="MIDI port name or index to use"
-    )
+    parser.add_argument("--midi-port", type=str, default=None, help="MIDI port name or index to use")
     args = parser.parse_args()
 
     midi_processor = MidiProcessor(port_name=args.midi_port)
     video_processor = VideoProcessor(device=args.camera)
 
     try:
-
         midi_processor.start_processing()
         video_processor.start_processing()
 

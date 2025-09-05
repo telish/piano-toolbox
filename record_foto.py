@@ -1,8 +1,8 @@
+import argparse  # Import argparse for command-line arguments
+import os
 import signal
 import sys
-import os
 import time
-import argparse  # Import argparse for command-line arguments
 
 import cv2
 
@@ -30,7 +30,7 @@ if not cap.isOpened():
     sys.exit(1)
 
 
-def signal_handler(sig, frame):  # Signal handler for graceful exit
+def signal_handler(_sig: int, _frame: object) -> None:  # Signal handler for graceful exit
     print("\nExiting. Images saved in '{}'".format(output_dir))
     cap.release()
     cv2.destroyAllWindows()
@@ -57,9 +57,7 @@ while True:
     color = (255, 255, 255)  # White text
 
     # Get text size to position it and create background
-    (text_width, text_height), baseline = cv2.getTextSize(
-        text, font, font_scale, thickness
-    )
+    (text_width, text_height), baseline = cv2.getTextSize(text, font, font_scale, thickness)
 
     # Position at the bottom of the frame
     text_x = 10

@@ -20,7 +20,7 @@ import cv2
 import utils
 
 
-def parse_args(cli_args=None) -> argparse.Namespace:
+def parse_args() -> argparse.Namespace:
     """
     Parse command line arguments.
 
@@ -31,17 +31,11 @@ def parse_args(cli_args=None) -> argparse.Namespace:
     Returns:
         Parsed command line arguments.
     """
-    parser = argparse.ArgumentParser(
-        description="Calibrate camera orientation from recording or live camera feed"
-    )
-    input_group = parser.add_mutually_exclusive_group(
-        required=False
-    )  # Changed to False
+    parser = argparse.ArgumentParser(description="Calibrate camera orientation from recording or live camera feed")
+    input_group = parser.add_mutually_exclusive_group(required=False)  # Changed to False
     input_group.add_argument("--recording", type=str, help="Path to a recording")
-    input_group.add_argument(
-        "--live", type=int, help="Camera index for live feed (default: 0)"
-    )
-    args = parser.parse_args(cli_args)
+    input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
+    args = parser.parse_args()
 
     # If neither recording nor live is specified, default to live with index 0
     if args.recording is None and args.live is None:
@@ -70,7 +64,7 @@ def save_orientation() -> None:
         )
 
 
-def main(recording=None, live=None) -> None:
+def main() -> None:
     """
     Run camera orientation calibration.
 
@@ -79,40 +73,25 @@ def main(recording=None, live=None) -> None:
         live: Optional camera index for live feed.
     """
     # If direct parameters are provided, use them instead of parsing CLI args
-    if recording is not None or live is not None:
-        args = argparse.Namespace()
-        args.recording = recording
-        args.live = live
-    else:
-        # Otherwise parse from command line
-        args = parse_args()
+    args = parse_args()
 
     image = None
     cap = None
 
     if args.recording:
+        video_path = os.path.join(os.path.abspath(args.recording), "video", "recording.avi")
         utils.set_calibration_base_dir(os.path.abspath(args.recording))
-        video_path = os.path.join(
-            os.path.abspath(args.recording), "video", "recording.avi"
-        )
+        # Open video and read first frame
         c = cv2.VideoCapture(video_path)
         if not c.isOpened():
-            print(f"Error: Could not open video file: {video_path}")
-            exit()
+            raise ValueError(f"Could not open video file: {video_path}")
         ret, image = c.read()
         if not ret:
-            print(f"Error: Could not read frame from video: {video_path}")
-            exit()
+            raise ValueError(f"Could not read frame from video: {video_path}")
     elif args.live is not None:
         cap = cv2.VideoCapture(args.live)
         if not cap.isOpened():
-            print(f"Error: Could not open camera: {args.live}")
-            exit()
-        ret, image = cap.read()
-        if not ret:
-            print("Error: Could not read frame from camera.")
-            exit()
-    assert image is not None
+            raise ValueError(f"Could not open camera: {args.live}")
 
     text = (
         "Press 'h' to toggle horizontal flip, 'v' to toggle vertical flip, 's' to save and quit and"
@@ -124,13 +103,22 @@ def main(recording=None, live=None) -> None:
     cv2.namedWindow("Keyboard View")
 
     while True:
-        img_copy = image.copy()
-        if _state["flip_horizontal"]:
-            img_copy = cv2.flip(img_copy, 1)
-        if _state["flip_vertical"]:
-            img_copy = cv2.flip(img_copy, 0)
+        if cap is not None:
+            ret, image = cap.read()
+            if not ret:
+                print("Failed to grab frame from camera.")
+                exit(1)
+            img_draw = image
+        else:
+            assert image is not None
+            img_draw = image.copy()
 
-        img_copy = utils.add_text_to_image(img_copy, text)
+        if _state["flip_horizontal"]:
+            img_draw = cv2.flip(img_draw, 1)
+        if _state["flip_vertical"]:
+            img_draw = cv2.flip(img_draw, 0)
+
+        img_copy = utils.add_text_to_image(img_draw, text)
         cv2.imshow("Keyboard View", img_copy)
 
         key = cv2.waitKey(1) & 0xFF

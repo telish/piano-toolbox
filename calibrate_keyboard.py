@@ -7,27 +7,23 @@ adjust key lengths, and save the calibration data and annotated image for furthe
 import argparse
 import json
 import os
-from typing import Optional, Any
+from typing import Any
 
 import cv2
-import numpy.typing as npt
 import numpy as np
+import numpy.typing as npt
 
-import utils
 import draw_keys_3d
-from draw_keys_3d import CorrespondingPoints
 import keyboard_geometry
+import utils
+from draw_keys_3d import CorrespondingPoints
 
 
 def parse_args() -> argparse.Namespace:
-    parser = argparse.ArgumentParser(
-        description="Calibrate keyboard geometry from recording or live camera feed"
-    )
+    parser = argparse.ArgumentParser(description="Calibrate keyboard geometry from recording or live camera feed")
     input_group = parser.add_mutually_exclusive_group(required=False)
     input_group.add_argument("--recording", type=str, help="Path to a recording")
-    input_group.add_argument(
-        "--live", type=int, help="Camera index for live feed (default: 0)"
-    )
+    input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
     args = parser.parse_args()
 
     # If neither recording nor live is specified, default to live with index 0
@@ -47,12 +43,8 @@ _state = {
 def draw_points(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> None:
     for i, point in enumerate(points):
         p = point["pixel"]
-        size = (
-            5 if i == _state["dragging_index"] else 3
-        )  # Larger point if being dragged
-        color = (
-            (0, 0, 255) if i == _state["dragging_index"] else (255, 0, 255)
-        )  # Red if dragged, magenta otherwise
+        size = 5 if i == _state["dragging_index"] else 3  # Larger point if being dragged
+        color = (0, 0, 255) if i == _state["dragging_index"] else (255, 0, 255)  # Red if dragged, magenta otherwise
         cv2.rectangle(
             img,
             (int(p[0]) - size, int(p[1]) - size),
@@ -63,7 +55,7 @@ def draw_points(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> Non
         # Display point number
         cv2.putText(
             img,
-            f"{i+1}: {point['object']}",
+            f"{i + 1}: {point['object']}",
             (int(p[0]) + 10, int(p[1]) - 10),
             cv2.FONT_HERSHEY_SIMPLEX,
             0.6,
@@ -104,9 +96,7 @@ def draw_trapezoid(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> 
             )
 
 
-def find_closest_point_index(
-    x, y, points: list[tuple[int, int]], max_distance: int = 20
-):
+def find_closest_point_index(x: int, y: int, points: list[tuple[int, int]], max_distance: int = 20) -> int:
     """Find the index of the closest point to position (x,y)."""
     if not points:
         return -1
@@ -123,13 +113,11 @@ def find_closest_point_index(
     return closest_idx
 
 
-def mouse_callback(event: int, x: int, y: int, _flags, _param):
+def mouse_callback(event: int, x: int, y: int, _flags: int, _param) -> None:
     if event == cv2.EVENT_LBUTTONDOWN:
         # Check if an existing point was clicked
         all_pixel_coords = [p["pixel"] for p in _state["user_defined_points"]]
-        _state["dragging_index"] = find_closest_point_index(
-            x, y, all_pixel_coords, _state["drag_threshold"]
-        )
+        _state["dragging_index"] = find_closest_point_index(x, y, all_pixel_coords, _state["drag_threshold"])
 
         # If no nearby point and still room for more points
         if _state["dragging_index"] == -1:
@@ -139,9 +127,7 @@ def mouse_callback(event: int, x: int, y: int, _flags, _param):
 
     elif event == cv2.EVENT_MOUSEMOVE:
         # Drag point if one is selected
-        if _state["dragging_index"] != -1 and _state["dragging_index"] < len(
-            _state["user_defined_points"]
-        ):
+        if _state["dragging_index"] != -1 and _state["dragging_index"] < len(_state["user_defined_points"]):
             _state["user_defined_points"][_state["dragging_index"]]["pixel"] = (x, y)
 
     elif event == cv2.EVENT_LBUTTONUP:
@@ -174,9 +160,9 @@ def add_object_coords(points: list[CorrespondingPoints]) -> None:
             p["object"] = object_coords
 
 
-def main(recording=None, live=None) -> None:
+def main(recording: str | None = None, live: int | None = None) -> None:
     cap = None
-    image: Optional[npt.NDArray[Any]] = None
+    image: npt.NDArray[Any] | None = None
 
     # If direct parameters are provided, use them
     if recording is not None or live is not None:
@@ -188,9 +174,7 @@ def main(recording=None, live=None) -> None:
         args = parse_args()
 
     if args.recording:
-        video_path = os.path.join(
-            os.path.abspath(args.recording), "video", "recording.avi"
-        )
+        video_path = os.path.join(os.path.abspath(args.recording), "video", "recording.avi")
         utils.set_calibration_base_dir(os.path.abspath(args.recording))
         # Open video and read first frame
         c = cv2.VideoCapture(video_path)
@@ -268,7 +252,7 @@ def main(recording=None, live=None) -> None:
     cv2.destroyAllWindows()
 
 
-def find_closest_point(pt):
+def find_closest_point(pt: CorrespondingPoints) -> tuple[float, float]:
     min_distance = float("inf")
     closest_pitch, closest_index = None, None
     for pitch in range(21, 109):
@@ -278,19 +262,19 @@ def find_closest_point(pt):
             distance = np.linalg.norm(np.array(key_pt) - np.array(pt["pixel"]))
             if distance < min_distance:
                 min_distance = distance
-                closest = key_pt  # pylint: disable=unused-variable
+                # closest = key_pt
                 closest_pitch = pitch
                 closest_index = idx  # Store the index
-    assert (
-        closest_pitch is not None and closest_index is not None
-    ), f"Could not find closest pitch for point {pt}"
+    assert closest_pitch is not None and closest_index is not None, f"Could not find closest pitch for point {pt}"
 
     object_coords = keyboard_geometry.key_points(closest_pitch)[closest_index]
 
     return object_coords
 
 
-def get_correspondences_without_projection(points: list[CorrespondingPoints]):
+def get_correspondences_without_projection(
+    points: list[CorrespondingPoints],
+) -> tuple[CorrespondingPoints, CorrespondingPoints, CorrespondingPoints, CorrespondingPoints]:
     assert len(points) == 4, "Exactly 4 points are required."
 
     sorted_by_y = sorted(points, key=lambda p: p["pixel"][1])
