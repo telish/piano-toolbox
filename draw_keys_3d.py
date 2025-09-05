@@ -103,11 +103,28 @@ def draw_key(
 
 
 def draw_keyboard(
-    img: npt.NDArray[Any], color: tuple[int, int, int]
+    img: npt.NDArray[Any], color: tuple[int, int, int], outline_only: bool = False
 ) -> npt.NDArray[Any]:
-    for midi_pitch in range(21, 109):
-        draw_key(img, midi_pitch, color)
-    return img
+    if outline_only:
+        # Draw only the outline of the keyboard
+        ps = keyboard_geometry.KEYBOARD_OUTLINE
+        points = [
+            ps["top-left"],
+            ps["top-right"],
+            ps["bottom-right"],
+            ps["bottom-left"],
+        ]
+        assert (
+            homography_matrix is not None
+        ), "Homography matrix not initialized. Call init() first."
+        points_2d = np.array(points, dtype=np.float32).reshape(-1, 1, 2)
+        image_points = cv2.perspectiveTransform(points_2d, homography_matrix)
+        draw_polygon(img, image_points, color)
+        return img
+    else:
+        for midi_pitch in range(21, 109):
+            draw_key(img, midi_pitch, color)
+        return img
 
 
 def draw_annotation(

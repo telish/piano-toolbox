@@ -70,15 +70,23 @@ def save_orientation() -> None:
         )
 
 
-def main(cli_args=None) -> None:
+def main(recording=None, live=None) -> None:
     """
     Run camera orientation calibration.
 
     Args:
-        cli_args: Optional list of command line arguments to parse instead of sys.argv.
-                  Useful for testing.
+        recording: Optional path to a recording directory.
+        live: Optional camera index for live feed.
     """
-    args = parse_args(cli_args)
+    # If direct parameters are provided, use them instead of parsing CLI args
+    if recording is not None or live is not None:
+        args = argparse.Namespace()
+        args.recording = recording
+        args.live = live
+    else:
+        # Otherwise parse from command line
+        args = parse_args()
+
     image = None
     cap = None
 

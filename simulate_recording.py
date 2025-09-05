@@ -5,6 +5,7 @@ import os
 
 # import time
 import argparse  # For command-line arguments
+import time
 
 import cv2
 import mido
@@ -173,7 +174,7 @@ class VideoPlayer:
 
     def load_video_if_needed(self):
         if self.video_capture is None:
-            video_file = os.path.join(self.video_path, "recording.avi")
+            video_file = os.path.join(self.video_path, "video", "recording.avi")
             self.video_capture = cv2.VideoCapture(video_file)
 
     def read_frame(self, frame_number):
@@ -195,21 +196,17 @@ def process_video_frame(event, video_processor):
 
     # Process frame
     img = utils.flip_image(img)
+
+    # Time the frame processing
+    # start_time = time.time()
     hub.process_frame(img)
+    # processing_time = time.time() - start_time
+    # print(f"Frame processing time: {processing_time*1000:.2f} ms")
+
     img = hub.last_image_output
     assert img is not None, "No image output from hub"
 
-    # Draw notes
-    for midi_pitch, note_props in hub.current_notes.items():
-        if note_props["hand"] == "left":
-            color = (0, 0, 200)  # Red color
-        elif note_props["hand"] == "right":
-            color = (0, 200, 0)  # Green color
-        else:
-            color = (200, 200, 0)  # Yellow for unknown hand
-
-        annotation = f"{', '.join(str(x) for x in note_props['finger'])}"
-        img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
+    hub.draw_results(img)
 
     cv2.imshow("Simulate Recording", img)
     handle_keyboard_input(img)

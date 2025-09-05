@@ -12,3 +12,6 @@ def configure(port: int):
 
 def send_message(address: str, *args):
     _state["osc_client"].send_message(address, args)
+
+
+configure(9876)  # Default port

@@ -174,10 +174,18 @@ def add_object_coords(points: list[CorrespondingPoints]) -> None:
             p["object"] = object_coords
 
 
-def main() -> None:
+def main(recording=None, live=None) -> None:
     cap = None
     image: Optional[npt.NDArray[Any]] = None
-    args = parse_args()
+
+    # If direct parameters are provided, use them
+    if recording is not None or live is not None:
+        args = argparse.Namespace()
+        args.recording = recording
+        args.live = live
+    else:
+        # Otherwise parse from command line
+        args = parse_args()
 
     if args.recording:
         video_path = os.path.join(
@@ -205,7 +213,8 @@ def main() -> None:
         "1. Click to place a point\n"
         "2. Drag points to adjust\n"
         "3. Press '+' or '-' to adjust the black key length\n"
-        "4. Press 'q' to save and quit"
+        "4. Press 's' to save and quit\n"
+        "5. Press 'q' to quit without saving"
     )
 
     while True:
@@ -244,7 +253,9 @@ def main() -> None:
 
         key = cv2.waitKey(1) & 0xFF
 
-        if key == ord("q"):  # Save and quit
+        if key == ord("q"):  # Quit without saving
+            break
+        elif key == ord("s"):  # Save and quit
             save_coords(image)
             break
         elif key == ord("+") or key == ord("="):  # Increase black key length

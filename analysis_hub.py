@@ -119,6 +119,24 @@ class AnalysisHub:
 
         return result_hand, result_fingers
 
+    def draw_results(self, img: npt.NDArray[Any]) -> None:
+        """Draw analysis results on the image."""
+        # Draw notes
+        for midi_pitch, note_props in self.current_notes.items():
+            if note_props["hand"] == "left":
+                color = (0, 0, 200)  # Red color
+            elif note_props["hand"] == "right":
+                color = (0, 200, 0)  # Green color
+            else:
+                color = (200, 200, 0)  # Yellow for unknown hand
+
+            annotation = f"{', '.join(str(x) for x in note_props['finger'])}"
+            img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
+
+        draw_keys_3d.draw_keyboard(
+            img, (0, 165, 255), outline_only=True
+        )  # Orange color in BGR format
+
     def process_midi_event(self, event: dict):
         msg = event["message"]
         if msg.type == "note_on" and msg.velocity > 0:
