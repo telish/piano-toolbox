@@ -4,6 +4,7 @@
 import argparse  # For command-line arguments
 import json
 import os
+import time
 
 import cv2
 import mido
@@ -11,10 +12,11 @@ import mido
 import draw_keys_3d
 import osc_sender
 import utils
-from analysis_hub import hub
+from datatypes import Image
+from processing_hub import hub
 
 
-def parse_midi_msgs(filename):
+def parse_midi_msgs(filename: str) -> list[dict]:
     """Parse MIDI messages from file. Returns empty list if file doesn't exist."""
     result = []
     try:
@@ -35,7 +37,7 @@ def parse_midi_msgs(filename):
     return result
 
 
-def parse_video_timestamps(timestamps_file):
+def parse_video_timestamps(timestamps_file: str) -> list[dict]:
     """Parse the timestamps.json file created by record_video.py"""
     with open(timestamps_file, "r", encoding="utf-8") as f:
         timestamps = json.load(f)
@@ -49,7 +51,7 @@ def parse_video_timestamps(timestamps_file):
     ]
 
 
-def parse_video(path):
+def parse_video(path: str) -> list[dict]:
     """Read video file and timestamps"""
     # Read timestamps
     timestamps_file = os.path.join(path, "timestamps.json")
@@ -64,7 +66,7 @@ def parse_video(path):
     return parse_video_timestamps(timestamps_file)
 
 
-def draw_text(img, instruction_text):
+def draw_text(img: Image, instruction_text: str):
     font = cv2.FONT_HERSHEY_SIMPLEX
     text_size = cv2.getTextSize(instruction_text, font, 0.7, 2)[0]
 
@@ -104,7 +106,7 @@ skip_to_next_note = {
 }
 
 
-def handle_keyboard_input(img):
+def handle_keyboard_input(img: Image) -> None:
     global skip_to_next_note
     stop = not skip_to_next_note["should_skip_to_end"] and (
         (not skip_to_next_note["should_skip_to_next_note"])
@@ -112,7 +114,9 @@ def handle_keyboard_input(img):
     )
     if stop:
         # Draw instructions directly on the image
-        instruction_text = "Press 'f' for next frame, 'n' for the next note, 'e' to continue until the end, 'q' to quit"
+        instruction_text = (
+            "Press 'f' for next frame, 'n' for the next note_on or note_off, 'e' to continue until the end, 'q' to quit"
+        )
         draw_text(img, instruction_text)
 
         while True:
@@ -137,7 +141,7 @@ def handle_keyboard_input(img):
         cv2.waitKey(1)  # Just to update the window without blocking
 
 
-def get_all_events(recording_base):
+def get_all_events(recording_base: str) -> list[dict]:
     midi_events = parse_midi_msgs(os.path.join(recording_base, "midi/midi_msg.txt"))
     video_events = parse_video(os.path.join(recording_base, "video"))
 
@@ -148,29 +152,30 @@ def get_all_events(recording_base):
     return all_events
 
 
-def process_midi(event):
+def process_midi(event: dict) -> None:
     print(f"{event['timestamp']}: {event['message']}")
     hub.process_midi_event(event["timestamp"], event["message"])
     res = hub.last_midi_result
-    if hub.last_midi_result["msg.type"] == "note_on":
-        print(res["hand"].capitalize(), res["finger"])
-        if skip_to_next_note["should_skip_to_next_note"]:
-            skip_to_next_note["note_received"] = True
+    assert res
+    if res["type"] == "note_on":
+        print(res["hand"].capitalize(), res["fingers"])
+    if skip_to_next_note["should_skip_to_next_note"]:
+        skip_to_next_note["note_received"] = True
 
 
 class VideoPlayer:
     """Class to handle video playback."""
 
-    def __init__(self, video_path):
+    def __init__(self, video_path: str) -> None:
         self.video_path = video_path
         self.video_capture = None
 
-    def load_video_if_needed(self):
+    def load_video_if_needed(self) -> None:
         if self.video_capture is None:
             video_file = os.path.join(self.video_path, "video", "recording.avi")
             self.video_capture = cv2.VideoCapture(video_file)
 
-    def read_frame(self, frame_number):
+    def read_frame(self, frame_number: int) -> tuple[bool, Image]:
         self.load_video_if_needed()
         assert self.video_capture is not None, "Video capture is not initialized"
         self.video_capture.set(cv2.CAP_PROP_POS_FRAMES, frame_number)
@@ -178,7 +183,7 @@ class VideoPlayer:
         return ret, img
 
 
-def process_video_frame(event, video_processor):
+def process_video_frame(event: dict, video_processor: VideoPlayer) -> None:
     print(f"{event['timestamp']:.7f}: Frame {event['frame_number']}")
 
     # Read frame
@@ -191,9 +196,8 @@ def process_video_frame(event, video_processor):
     img = utils.flip_image(img)
 
     # Time the frame processing
-    # start_time = time.time()
+    start_time = time.time()
     hub.process_frame(event["timestamp"], img)
-    # processing_time = time.time() - start_time
     # print(f"Frame processing time: {processing_time*1000:.2f} ms")
 
     img = hub.last_image_output

@@ -4,7 +4,6 @@ import cv2
 import mido
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import INFO, PRIMARY, SUCCESS
-from ttkbootstrap.dialogs import Messagebox
 
 import draw_keys_3d
 

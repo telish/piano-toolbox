@@ -1,11 +1,10 @@
-from dataclasses import dataclass, field
-from typing import Any, List, Tuple
+"""Functions to track hands using Google's MediaPipe."""
 
 import cv2
 import mediapipe as mp
-import numpy.typing as npt
 
 import osc_sender
+from datatypes import Image, TrackingResult
 
 MP_THUMB_TIP = 4
 MP_INDEX_FINGER_TIP = 8
@@ -21,27 +20,19 @@ finger_to_tip_index = {
     5: MP_PINKY_TIP,
 }
 
-# This is set to actual values once analyze_frame is first called
-image_height_px, image_width_px = 0, 0
+image_width_px = 0
+image_height_px = 0
 
 
-@dataclass
-class TrackingResult:
-    left_visible: bool = False
-    right_visible: bool = False
-    left_landmarks_xyz: Tuple[List[float], List[float], List[float]] = field(default_factory=lambda: ([], [], []))
-    right_landmarks_xyz: Tuple[List[float], List[float], List[float]] = field(default_factory=lambda: ([], [], []))
-
-
-def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | None = None) -> TrackingResult:
-    global image_height_px, image_width_px
-    image_height_px, image_width_px, _ = img_input.shape
-
+def analyze_frame(img_input: Image, img_output: Image | None = None) -> TrackingResult:
+    """Analyze a video frame to detect and track hands."""
+    global image_width_px, image_height_px
+    image_height_px, image_width_px = img_input.shape[:2]
     # Convert the frame to RGB (MediaPipe expects RGB images)
     rgb_frame = cv2.cvtColor(img_input, cv2.COLOR_BGR2RGB)
 
     # Process the frame and get results
-    mp_results = hands.process(rgb_frame)
+    mp_results = _hands_tracker.process(rgb_frame)
 
     result = TrackingResult()
     if mp_results.multi_hand_landmarks:
@@ -100,7 +91,7 @@ def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | No
     return result
 
 
-hands = mp.solutions.hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
+_hands_tracker = mp.solutions.hands.Hands(min_detection_confidence=0.7, min_tracking_confidence=0.5)
 
 
 if __name__ == "__main__":

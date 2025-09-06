@@ -7,16 +7,14 @@ adjust key lengths, and save the calibration data and annotated image for furthe
 import argparse
 import json
 import os
-from typing import Any
 
 import cv2
 import numpy as np
-import numpy.typing as npt
 
 import draw_keys_3d
 import keyboard_geometry
 import utils
-from draw_keys_3d import CorrespondingPoints
+from datatypes import CorrespondingPoints, Image
 
 
 def parse_args() -> argparse.Namespace:
@@ -40,7 +38,7 @@ _state = {
 }
 
 
-def draw_points(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> None:
+def draw_points(img: Image, points: list[CorrespondingPoints]) -> None:
     for i, point in enumerate(points):
         p = point["pixel"]
         size = 5 if i == _state["dragging_index"] else 3  # Larger point if being dragged
@@ -64,7 +62,7 @@ def draw_points(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> Non
         )
 
 
-def draw_trapezoid(img: npt.NDArray[Any], points: list[CorrespondingPoints]) -> None:
+def draw_trapezoid(img: Image, points: list[CorrespondingPoints]) -> None:
     """Draw the trapezoid based on selected points."""
 
     if len(points) > 1:
@@ -113,7 +111,7 @@ def find_closest_point_index(x: int, y: int, points: list[tuple[int, int]], max_
     return closest_idx
 
 
-def mouse_callback(event: int, x: int, y: int, _flags: int, _param) -> None:
+def mouse_callback(event: int, x: int, y: int, _flags: int, _param: object) -> None:
     if event == cv2.EVENT_LBUTTONDOWN:
         # Check if an existing point was clicked
         all_pixel_coords = [p["pixel"] for p in _state["user_defined_points"]]
@@ -135,7 +133,7 @@ def mouse_callback(event: int, x: int, y: int, _flags: int, _param) -> None:
         _state["dragging_index"] = -1  # End dragging
 
 
-def save_coords(image: npt.NDArray[Any]) -> None:
+def save_coords(image: Image) -> None:
     if len(_state["user_defined_points"]) >= 4:
         file_path = utils.get_keyboard_geometry_file_path()
         assert file_path
@@ -162,7 +160,7 @@ def add_object_coords(points: list[CorrespondingPoints]) -> None:
 
 def main(recording: str | None = None, live: int | None = None) -> None:
     cap = None
-    image: npt.NDArray[Any] | None = None
+    image: Image | None = None
 
     # If direct parameters are provided, use them
     if recording is not None or live is not None:

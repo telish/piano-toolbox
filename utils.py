@@ -1,9 +1,9 @@
 import json
 import os
-from typing import Any
 
 import cv2
-import numpy.typing as npt
+
+from datatypes import Image
 
 _calibration_base_dir = os.path.dirname(os.path.abspath(__file__))
 
@@ -24,9 +24,7 @@ def get_keyboard_image_file_path() -> str:
 
 
 def get_keyboard_geometry_file_path() -> str:
-    return os.path.join(
-        _calibration_base_dir, "calibration", "keyboard", "keyboard_geometry.json"
-    )
+    return os.path.join(_calibration_base_dir, "calibration", "keyboard", "keyboard_geometry.json")
 
 
 def retrieve_camera_orientation_file_path() -> str:
@@ -38,9 +36,7 @@ flip_horizontal, flip_vertical = False, False
 
 def load_flip_settings() -> None:
     global flip_vertical, flip_horizontal
-    json_path = os.path.join(
-        _calibration_base_dir, "calibration", "camera_orientation.json"
-    )
+    json_path = os.path.join(_calibration_base_dir, "calibration", "camera_orientation.json")
     if os.path.exists(json_path):
         with open(json_path, "r") as f:
             orientation = json.load(f)
@@ -51,7 +47,7 @@ def load_flip_settings() -> None:
 load_flip_settings()
 
 
-def flip_image(img: npt.NDArray[Any]) -> npt.NDArray[Any]:
+def flip_image(img: Image) -> Image:
     if flip_vertical:
         img = cv2.flip(img, 0)
     if flip_horizontal:
@@ -60,7 +56,7 @@ def flip_image(img: npt.NDArray[Any]) -> npt.NDArray[Any]:
 
 
 def add_text_to_image(
-    img: npt.NDArray[Any],
+    img: Image,
     text: str,
     position: str = "bottom-left",
     padding: int = 10,
@@ -69,7 +65,7 @@ def add_text_to_image(
     text_color: tuple[int, int, int] = (255, 255, 255),
     bg_color: tuple[int, int, int] = (0, 0, 0),
     max_text_width: int | None = None,
-) -> npt.NDArray[Any]:
+) -> Image:
     """
     Add multiline text to an image with background, supporting both user-defined
     and automatic line breaks based on available width.
@@ -120,16 +116,12 @@ def add_text_to_image(
         final_text_lines.append(current_line)
 
     # Calculate text block dimensions
-    text_sizes = [
-        cv2.getTextSize(line, font, font_scale, thickness) for line in final_text_lines
-    ]
+    text_sizes = [cv2.getTextSize(line, font, font_scale, thickness) for line in final_text_lines]
     text_widths = [size[0][0] for size in text_sizes]
     text_heights = [size[0][1] for size in text_sizes]
 
     max_width = max(text_widths) if text_widths else 0
-    total_height = (
-        sum(text_heights) + (len(final_text_lines) - 1) * padding if text_heights else 0
-    )
+    total_height = sum(text_heights) + (len(final_text_lines) - 1) * padding if text_heights else 0
 
     # Determine position coordinates
     if position == "bottom-left":

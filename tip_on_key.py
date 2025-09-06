@@ -1,31 +1,32 @@
 """Functions to find fingertip position on a piano key and convert to trapezoid coordinates."""
 
-from typing import Any
-
 import cv2
 import numpy as np
-import numpy.typing as npt
 
 import draw_keys_3d
 import track_hands
 import utils
-from track_hands import TrackingResult
+from datatypes import Image, MidiResult, TrackingResult
 
 
 def find_tip_on_key(
     midi_pitch: int,
-    note_properties: dict,
+    note_properties: MidiResult,
     mp_result: TrackingResult,
-    img_output: npt.NDArray[Any] | None = None,
+    img_output: Image | None = None,
 ) -> tuple[float, float] | None:
     hand = note_properties["hand"]
-    finger = note_properties["finger"]
-    if hand is None or finger is None:
+    fingers = note_properties["fingers"]
+    if hand == "" or fingers == []:
         return None
 
-    tip_idx = track_hands.finger_to_tip_index[finger[0]]
-    x_tip = mp_result.landmarks_xyz[hand][0][tip_idx] * track_hands.image_width_px
-    y_tip = mp_result.landmarks_xyz[hand][1][tip_idx] * track_hands.image_height_px
+    tip_idx = track_hands.finger_to_tip_index[fingers[0]]
+    if hand == "left":
+        x_tip = mp_result.left_landmarks_xyz[0][tip_idx] * track_hands.image_width_px
+        y_tip = mp_result.left_landmarks_xyz[1][tip_idx] * track_hands.image_height_px
+    else:
+        x_tip = mp_result.right_landmarks_xyz[0][tip_idx] * track_hands.image_width_px
+        y_tip = mp_result.right_landmarks_xyz[1][tip_idx] * track_hands.image_height_px
 
     key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)
     u, v = point_to_trapezoid_coords((x_tip, y_tip), key_outline)
@@ -36,13 +37,13 @@ def find_tip_on_key(
 
 
 def draw_tip_on_key(
-    img: npt.NDArray[Any],
-    key_bounding_box: npt.NDArray[Any],
+    img: Image,
+    key_bounding_box: Image,
     tip_xy_coords: tuple[float, float],
     tip_uv_coords: tuple[float, float],
     show_bb: bool = False,
     show_text: bool = False,
-) -> npt.NDArray[Any]:
+) -> Image:
     """
     Draw a key and a fingertip point with the trapezoid coordinates.
     """
@@ -104,7 +105,7 @@ def draw_tip_on_key(
     return img
 
 
-def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: npt.NDArray[Any]) -> tuple[float, float]:
+def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: Image) -> tuple[float, float]:
     """
     Calculate the natural coordinates (u,v) of a point inside a trapezoid.
 

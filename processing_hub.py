@@ -3,50 +3,27 @@ Analysis hub provides the main entrance point for all analyses and coordinates r
 analysis modules.
 """
 
-from typing import Any, TypedDict
-
 import mido
 import numpy as np
-import numpy.typing as npt
 from shapely.geometry import Point, Polygon
 
 import draw_keys_3d
 import osc_sender
 import tip_on_key
 import track_hands
-from track_hands import TrackingResult
+from datatypes import HandLiteral, Image, MidiResult, TrackingResult
 
 
-def _point_distance_to_quad(point: tuple[float, float], quad: npt.NDArray[Any]) -> float:
-    """
-    point: tuple (x, y)
-    quad: numpy array with shape (4, 1, 2)
-    Returns a negative value (= how much it is inside), if the point is inside the polygon, otherwise the minimum
-    distance to the polygon.
-    """
-    # Convert quad to shape (4,2)
-    quad_points = quad[:, 0, :]
-    polygon = Polygon(quad_points)
-    pt = Point(point)
-    if polygon.contains(pt):
-        # Return negative value: how far the point is inside
-        # Calculate the distance to the nearest edge and return it as negative
-        nearest_point = polygon.boundary.interpolate(polygon.boundary.project(pt))
-        return -pt.distance(nearest_point)
-    else:
-        return pt.distance(polygon)
-
-
-class AnalysisHub:
+class ProcessingHub:
     """Coordinates analysis results between modules."""
 
     def __init__(self) -> None:
-        self.last_midi_result = {}
-        self.current_notes = {}
+        self.last_midi_result: MidiResult | None = None
+        self.current_notes: dict[int, MidiResult] = {}
         self.last_mp_result: TrackingResult = TrackingResult()
-        self.last_image_output: npt.NDArray[Any] | None = None
+        self.last_image_output: Image | None = None
 
-    def _closest_hand_and_fingers(self, midi_pitch: int) -> tuple[str, list[int]]:
+    def _closest_hand_and_fingers(self, midi_pitch: int) -> tuple[HandLiteral, list[int]]:
         """Find the closest hand and fingers to the given MIDI pitch.
 
         Args:
@@ -58,13 +35,8 @@ class AnalysisHub:
         """
 
         outline = draw_keys_3d.pixel_coordinates_of_key(midi_pitch)
-
         # Get the outline of the midi pitch and compare the x position of the hands with the outline
         # Return which one is closer to the outline
-        if self.last_mp_result is None:
-            return "", []
-
-        assert self.last_mp_result is not None
         left_x, right_x = float("-inf"), float("inf")
         if self.last_mp_result.left_visible:
             left_x_coords = self.last_mp_result.left_landmarks_xyz[0]
@@ -97,7 +69,7 @@ class AnalysisHub:
             track_hands.MP_RING_FINGER_TIP,
             track_hands.MP_PINKY_TIP,
         ]  # Indexes of finger tips in the landmarks
-        result_fingers = []
+        result_fingers: list[int] = []
         closest_finger = None
         min_distance = float("inf")
 
@@ -122,7 +94,7 @@ class AnalysisHub:
 
         return result_hand, result_fingers
 
-    def draw_results(self, img: npt.NDArray[Any]) -> None:
+    def draw_results(self, img: Image) -> None:
         """Draw analysis results on the image."""
         # Draw notes
         for midi_pitch, note_props in self.current_notes.items():
@@ -133,30 +105,56 @@ class AnalysisHub:
             else:
                 color = (200, 200, 0)  # Yellow for unknown hand
 
-            annotation = f"{', '.join(str(x) for x in note_props['finger'])}"
+            annotation = f"{', '.join(str(x) for x in note_props['fingers'])}"
             img = draw_keys_3d.draw_key(img, midi_pitch, color, annotation)
 
         draw_keys_3d.draw_keyboard(img, (0, 165, 255), outline_only=True)  # Orange color in BGR format
 
     def process_midi_event(self, timestamp: float, msg: mido.Message) -> None:
         if msg.type == "note_on" and msg.velocity > 0:
-            hand, finger = self._closest_hand_and_fingers(msg.note)
-            note_properties = {"velocity": msg.velocity, "hand": hand, "finger": finger}
-            self.current_notes[msg.note] = note_properties
-            self.last_midi_result = dict(note_properties)
-            self.last_midi_result["msg.type"] = "note_on"
-            self.last_midi_result["note"] = msg.note
-            osc_sender.send_message(f"/{hand}/note_on", msg.note, msg.velocity)
+            hand, fingers = self._closest_hand_and_fingers(msg.note)
+
+            midi_result: MidiResult = {
+                "type": "note_on",
+                "pitch": msg.note,
+                "velocity": msg.velocity,
+                "hand": hand,
+                "fingers": fingers,
+            }
+            self.current_notes[msg.note] = midi_result
+            self.last_midi_result = dict(midi_result)
+            self.send_note_on_osc(msg.note, msg.velocity, hand, fingers)
         elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
+            fingers = []
+            hand = ""
             if msg.note in self.current_notes:
+                old_result = self.current_notes[msg.note]
+                fingers = old_result["fingers"]
+                hand = old_result["hand"]
                 del self.current_notes[msg.note]
             self.last_midi_result = {
-                "msg.type": "note_off",
-                "note": msg.note,
+                "type": "note_off",
+                "pitch": msg.note,
                 "velocity": msg.velocity,
+                "hand": hand,
+                "fingers": fingers,
             }
+            self.send_note_off_osc(msg.note, hand, fingers)
 
-    def process_frame(self, timestamp: float, img: npt.NDArray[Any]) -> None:
+    def send_note_on_osc(self, midi_pitch: int, velocity: int, hand: str, fingers: list[int]) -> None:
+        osc_sender.send_message(f"/note", midi_pitch, velocity)
+        osc_sender.send_message(f"/{hand}/note", midi_pitch, velocity)
+        for finger in fingers:
+            osc_sender.send_message(f"/{hand}/{finger}/note", midi_pitch, velocity)
+
+    def send_note_off_osc(self, midi_pitch: int, hand: str, fingers: list[int]) -> None:
+        velocity = 0
+        osc_sender.send_message(f"/note", midi_pitch, velocity)
+        osc_sender.send_message(f"/{hand}/note", midi_pitch, velocity)
+        for finger in fingers:
+            osc_sender.send_message(f"/{hand}/{finger}/note", midi_pitch, velocity)
+
+    def process_frame(self, timestamp: float, img: Image) -> None:
         self.last_image_output = img.copy()
         self.last_mp_result = track_hands.analyze_frame(img_input=img, img_output=self.last_image_output)
         assert self.last_mp_result is not None
@@ -169,4 +167,24 @@ class AnalysisHub:
             )
 
 
-hub = AnalysisHub()
+def _point_distance_to_quad(point: tuple[float, float], quad: Image) -> float:
+    """
+    point: tuple (x, y)
+    quad: numpy array with shape (4, 1, 2)
+    Returns a negative value (= how much it is inside), if the point is inside the polygon, otherwise the minimum
+    distance to the polygon.
+    """
+    # Convert quad to shape (4,2)
+    quad_points = quad[:, 0, :]
+    polygon = Polygon(quad_points)
+    pt = Point(point)
+    if polygon.contains(pt):
+        # Return negative value: how far the point is inside
+        # Calculate the distance to the nearest edge and return it as negative
+        nearest_point = polygon.boundary.interpolate(polygon.boundary.project(pt))
+        return -pt.distance(nearest_point)
+    else:
+        return pt.distance(polygon)
+
+
+hub = ProcessingHub()

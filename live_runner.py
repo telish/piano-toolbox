@@ -1,18 +1,17 @@
 import argparse
 import threading
 import time
-from typing import Any
 
 import cv2
 import mido
-import numpy.typing as npt
 
 import draw_keys_3d
-from analysis_hub import hub
+from datatypes import Image, MidiResult
+from processing_hub import hub
 
 
 # Define processing functions at the top of the file
-def process_midi_event(event: mido.Message) -> dict:
+def process_midi_event(event: mido.Message) -> MidiResult:
     """Process a single MIDI event and pass it to the analysis hub."""
     # Measure time spent in MIDI processing
     midi_start = time.time()
@@ -20,10 +19,12 @@ def process_midi_event(event: mido.Message) -> dict:
     midi_process_time = time.time() - midi_start
     if midi_process_time > 0.01:  # Log only if processing takes >10ms
         print(f"MIDI processing time: {midi_process_time * 1000:.2f} ms")
+
+    assert hub.last_midi_result is not None
     return hub.last_midi_result
 
 
-def process_frame(frame: npt.NDArray[Any]) -> dict:
+def process_frame(frame: Image) -> tuple[Image, float]:
     """Process a single video frame and pass it to the analysis hub."""
     # Time the frame processing
     start_time = time.time()
@@ -32,12 +33,10 @@ def process_frame(frame: npt.NDArray[Any]) -> dict:
 
     # Get the processed output
     processed_frame = hub.last_image_output
+    assert processed_frame is not None
 
     # Return both the processed frame and timing information
-    return {
-        "frame": processed_frame if processed_frame is not None else frame,
-        "processing_time": processing_time,
-    }
+    return processed_frame, processing_time
 
 
 draw_keys_3d.init()
@@ -180,13 +179,13 @@ class VideoProcessor:
             return False
 
         # Use the process_frame function defined at the top
-        result = process_frame(frame)
+        output_img, time_passed = process_frame(frame)
 
         # Display the frame
-        cv2.imshow(self.display_window_name, result["frame"])
+        cv2.imshow(self.display_window_name, output_img)
 
         self.frame_count += 1
-        print(f"Frame processing time: {result['processing_time'] * 1000:.2f} ms")
+        print(f"Frame processing time: {time_passed * 1000:.2f} ms")
 
         return True
 
