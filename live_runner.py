@@ -39,10 +39,7 @@ def process_frame(frame: Image) -> tuple[Image, float]:
     return processed_frame, processing_time
 
 
-# Configuration
-FRAME_WIDTH = 1920
-FRAME_HEIGHT = 1080
-FPS = 30
+FPS = 30.0  # Target frames per second
 
 
 class MidiProcessor:
@@ -103,17 +100,8 @@ class MidiProcessor:
 
 
 class VideoProcessor:
-    def __init__(
-        self,
-        device: int,
-        width: int = FRAME_WIDTH,
-        height: int = FRAME_HEIGHT,
-        fps: int = FPS,
-    ) -> None:
+    def __init__(self, device: int) -> None:
         self.device = device
-        self.width = width
-        self.height = height
-        self.fps = fps
         self.processing = False
         self.cap = None
         self.frame_count = 0
@@ -125,9 +113,8 @@ class VideoProcessor:
         if not self.cap.isOpened():
             raise RuntimeError(f"Could not open video device {self.device}")
 
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-        self.cap.set(cv2.CAP_PROP_FPS, self.fps)
+        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
+        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
 
         # Get actual properties
         actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))

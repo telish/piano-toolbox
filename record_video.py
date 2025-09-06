@@ -60,12 +60,21 @@ def main() -> None:
     if not cap.isOpened():
         print("record-video.py: Error. Could not open webcam.")
         sys.exit(1)
+    cap.set(cv2.CAP_PROP_FPS, FPS)
 
     # Init video writer
     ret, frame = cap.read()
     if not ret:
         print("record-video.py: Error. Failed to capture first frame.")
         sys.exit(1)
+
+        self.cap.set(cv2.CAP_PROP_FPS, FPS)
+
+    actual_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
+    actual_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
+    actual_fps = cap.get(cv2.CAP_PROP_FPS)
+
+    print(f"Camera initialized: {actual_width}x{actual_height} @ {actual_fps} FPS")
 
     height, width = frame.shape[:2]
     out = cv2.VideoWriter(video_filename, fourcc, FPS, (width, height))
