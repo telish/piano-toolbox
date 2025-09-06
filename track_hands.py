@@ -1,4 +1,5 @@
-from typing import Any, TypedDict
+from dataclasses import dataclass, field
+from typing import Any, List, Tuple
 
 import cv2
 import mediapipe as mp
@@ -24,11 +25,12 @@ finger_to_tip_index = {
 image_height_px, image_width_px = 0, 0
 
 
-class TrackingResult(TypedDict):
-    left_visible: bool
-    right_visible: bool
-    left_landmarks_xyz: tuple[list[float], list[float], list[float]] | None
-    right_landmarks_xyz: tuple[list[float], list[float], list[float]] | None
+@dataclass
+class TrackingResult:
+    left_visible: bool = False
+    right_visible: bool = False
+    left_landmarks_xyz: Tuple[List[float], List[float], List[float]] = field(default_factory=lambda: ([], [], []))
+    right_landmarks_xyz: Tuple[List[float], List[float], List[float]] = field(default_factory=lambda: ([], [], []))
 
 
 def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | None = None) -> TrackingResult:
@@ -41,12 +43,7 @@ def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | No
     # Process the frame and get results
     mp_results = hands.process(rgb_frame)
 
-    result: TrackingResult = {
-        "left_visible": False,
-        "right_visible": False,
-        "left_landmarks_xyz": None,
-        "right_landmarks_xyz": None,
-    }
+    result = TrackingResult()
     if mp_results.multi_hand_landmarks:
         for idx, hand_landmarks in enumerate(mp_results.multi_hand_landmarks):
             # Determine the hand label
@@ -62,12 +59,12 @@ def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | No
             z_coords = [landmark.z for landmark in hand_landmarks.landmark]
 
             if label == "left":
-                result["left_visible"] = True
-                result["left_landmarks_xyz"] = (x_coords, y_coords, z_coords)
+                result.left_visible = True
+                result.left_landmarks_xyz = (x_coords, y_coords, z_coords)
 
             elif label == "right":
-                result["right_visible"] = True
-                result["right_landmarks_xyz"] = (x_coords, y_coords, z_coords)
+                result.right_visible = True
+                result.right_landmarks_xyz = (x_coords, y_coords, z_coords)
 
             coords = zip(x_coords, y_coords, z_coords)
             flat_coords = []
@@ -95,9 +92,9 @@ def analyze_frame(img_input: npt.NDArray[Any], img_output: npt.NDArray[Any] | No
 
             osc_sender.send_message(f"/{label}/landmarks", *flat_coords)
 
-    if not result["left_visible"]:
+    if not result.left_visible:
         osc_sender.send_message("/left/visible", 0)
-    if not result["right_visible"]:
+    if not result.right_visible:
         osc_sender.send_message("/right/visible", 0)
 
     return result
