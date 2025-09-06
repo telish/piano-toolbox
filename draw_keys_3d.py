@@ -55,7 +55,7 @@ def init(keypoint_mappings: list[CorrespondingPoints] | None = None) -> None:
     homography_matrix, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
 
 
-def draw_polygon(img: npt.NDArray[Any], points: npt.NDArray[Any], color: tuple[int, int, int]) -> None:
+def _draw_polygon(img: npt.NDArray[Any], points: npt.NDArray[Any], color: tuple[int, int, int]) -> None:
     img_points = np.round(points).astype(np.int32)
     img_points = img_points.reshape((-1, 1, 2))
     cv2.polylines(img, [img_points], isClosed=True, color=color, thickness=1)
@@ -88,7 +88,7 @@ def draw_key(
     annotation: str = "",
 ) -> npt.NDArray[Any]:
     image_points = pixel_coordinates_of_key(midi_pitch)
-    draw_polygon(img, image_points, color)
+    _draw_polygon(img, image_points, color)
     draw_annotation(img, midi_pitch, color, annotation, image_points)
     return img
 
@@ -106,7 +106,7 @@ def draw_keyboard(img: npt.NDArray[Any], color: tuple[int, int, int], outline_on
         assert homography_matrix is not None, "Homography matrix not initialized. Call init() first."
         points_2d = np.array(points, dtype=np.float32).reshape(-1, 1, 2)
         image_points = cv2.perspectiveTransform(points_2d, homography_matrix)
-        draw_polygon(img, image_points, color)
+        _draw_polygon(img, image_points, color)
         return img
     else:
         for midi_pitch in range(21, 109):

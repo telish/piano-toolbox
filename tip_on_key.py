@@ -9,12 +9,13 @@ import numpy.typing as npt
 import draw_keys_3d
 import track_hands
 import utils
+from track_hands import TrackingResult
 
 
 def find_tip_on_key(
     midi_pitch: int,
     note_properties: dict,
-    mp_result: dict,
+    mp_result: TrackingResult,
     img_output: npt.NDArray[Any] | None = None,
 ) -> tuple[float, float] | None:
     hand = note_properties["hand"]
@@ -23,8 +24,8 @@ def find_tip_on_key(
         return None
 
     tip_idx = track_hands.finger_to_tip_index[finger[0]]
-    x_tip = mp_result[hand + "_landmarks_xyz"][0][tip_idx] * track_hands.image_width_px
-    y_tip = mp_result[hand + "_landmarks_xyz"][1][tip_idx] * track_hands.image_height_px
+    x_tip = mp_result.landmarks_xyz[hand][0][tip_idx] * track_hands.image_width_px
+    y_tip = mp_result.landmarks_xyz[hand][1][tip_idx] * track_hands.image_height_px
 
     key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)
     u, v = point_to_trapezoid_coords((x_tip, y_tip), key_outline)
@@ -103,9 +104,7 @@ def draw_tip_on_key(
     return img
 
 
-def point_to_trapezoid_coords(
-    point: tuple[float, float], trapezoid: npt.NDArray[Any]
-) -> tuple[float, float]:
+def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: npt.NDArray[Any]) -> tuple[float, float]:
     """
     Calculate the natural coordinates (u,v) of a point inside a trapezoid.
 

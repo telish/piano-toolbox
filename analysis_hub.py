@@ -14,6 +14,7 @@ import draw_keys_3d
 import osc_sender
 import tip_on_key
 import track_hands
+from track_hands import TrackingResult
 
 
 def _point_distance_to_quad(point: tuple[float, float], quad: npt.NDArray[Any]) -> float:
@@ -42,10 +43,10 @@ class AnalysisHub:
     def __init__(self) -> None:
         self.last_midi_result = {}
         self.current_notes = {}
-        self.last_mp_result = {}
+        self.last_mp_result: TrackingResult = TrackingResult()
         self.last_image_output: npt.NDArray[Any] | None = None
 
-    def closest_hand_and_fingers(self, midi_pitch: int) -> tuple[str, list[int]]:
+    def _closest_hand_and_fingers(self, midi_pitch: int) -> tuple[str, list[int]]:
         """Find the closest hand and fingers to the given MIDI pitch.
 
         Args:
@@ -63,18 +64,20 @@ class AnalysisHub:
         if self.last_mp_result is None:
             return "", []
 
-        if self.last_mp_result["left_visible"]:
-            left_x_coords = self.last_mp_result["left_landmarks_xyz"][0]
+        assert self.last_mp_result is not None
+        left_x, right_x = float("-inf"), float("inf")
+        if self.last_mp_result.left_visible:
+            left_x_coords = self.last_mp_result.left_landmarks_xyz[0]
             left_x = max(left_x_coords) * track_hands.image_width_px
-        if self.last_mp_result["right_visible"]:
-            right_x_coords = self.last_mp_result["right_landmarks_xyz"][0]
+        if self.last_mp_result.right_visible:
+            right_x_coords = self.last_mp_result.right_landmarks_xyz[0]
             right_x = min(right_x_coords) * track_hands.image_width_px
 
-        if not self.last_mp_result["left_visible"] and not self.last_mp_result["right_visible"]:
+        if not self.last_mp_result.left_visible and not self.last_mp_result.right_visible:
             return "", []
-        elif not self.last_mp_result["left_visible"]:
+        elif not self.last_mp_result.left_visible:
             result_hand = "right"
-        elif not self.last_mp_result["right_visible"]:
+        elif not self.last_mp_result.right_visible:
             result_hand = "left"
         else:
             assert left_x is not None and right_x is not None
@@ -84,9 +87,9 @@ class AnalysisHub:
             result_hand = "left" if left_dist < right_dist else "right"
 
         if result_hand == "left":
-            landmarks = self.last_mp_result["left_landmarks_xyz"]
+            landmarks = self.last_mp_result.left_landmarks_xyz
         else:
-            landmarks = self.last_mp_result["right_landmarks_xyz"]
+            landmarks = self.last_mp_result.right_landmarks_xyz
         finger_tips_idx = [
             track_hands.MP_THUMB_TIP,
             track_hands.MP_INDEX_FINGER_TIP,
@@ -137,7 +140,7 @@ class AnalysisHub:
 
     def process_midi_event(self, timestamp: float, msg: mido.Message) -> None:
         if msg.type == "note_on" and msg.velocity > 0:
-            hand, finger = self.closest_hand_and_fingers(msg.note)
+            hand, finger = self._closest_hand_and_fingers(msg.note)
             note_properties = {"velocity": msg.velocity, "hand": hand, "finger": finger}
             self.current_notes[msg.note] = note_properties
             self.last_midi_result = dict(note_properties)
