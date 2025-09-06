@@ -8,7 +8,7 @@ import numpy as np
 import draw_keys_3d
 import track_hands
 import utils
-from datatypes import Image, MidiResult, TrackingResult
+from datatypes import HandLiteral, Image, MidiResult, TrackingResult
 
 
 def find_tip_on_key(
@@ -16,11 +16,11 @@ def find_tip_on_key(
     note_properties: MidiResult,
     mp_result: TrackingResult,
     img_output: Image | None = None,
-) -> tuple[float, float] | None:
+) -> tuple[float, float, HandLiteral, int]:
     hand = note_properties["hand"]
     fingers = note_properties["fingers"]
     if hand == "" or fingers == []:
-        return None
+        return float("nan"), float("nan"), "", -1
 
     tip_idx = track_hands.finger_to_tip_index[fingers[0]]
     if hand == "left":
@@ -35,7 +35,7 @@ def find_tip_on_key(
     if img_output is not None:
         draw_tip_on_key(img_output, key_outline, (x_tip, y_tip), (u, v))
 
-    return u, v
+    return u, v, hand, fingers[0]
 
 
 def draw_tip_on_key(
@@ -186,6 +186,8 @@ def test_interactive() -> None:
             img_copy = img.copy()
             key_outline = draw_keys_3d.pixel_coordinates_of_bounding_box(midi_pitch)
             u, v = point_to_trapezoid_coords((x, y), key_outline)
+            utils.add_text_to_image(img_copy, f"u={u:.2f}, v={v:.2f}", "top-left")
+
             draw_tip_on_key(img_copy, key_outline, (x, y), (u, v), show_bb=True)
             cv2.imshow("Test Trapezoid Coordinates", img_copy)
 

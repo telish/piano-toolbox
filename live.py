@@ -10,7 +10,7 @@ class PianoToolboxApp:
     def __init__(self, root: ttk.Window) -> None:
         self.root = root
         self.root.title("Piano Toolbox")
-        self.root.geometry("800x600")
+        self.root.geometry("500x400")
 
         # Variables
         self.available_cameras = self.get_available_cameras()
@@ -53,6 +53,8 @@ class PianoToolboxApp:
             return ["Error detecting MIDI devices"]
 
     def build_ui(self):
+        input_width = 18
+
         # Calibration
         calib_frame = ttk.LabelFrame(self.root, text="Calibration", padding=10)
         calib_frame.pack(fill="x", padx=10, pady=5)
@@ -63,54 +65,59 @@ class PianoToolboxApp:
             bootstyle=PRIMARY,
         ).pack(side="left", expand=True, fill="x", padx=5)
         ttk.Button(
-            calib_frame, text="Configure Keyboard Geometry", command=self.run_keyboard_calibration, bootstyle=PRIMARY
+            calib_frame,
+            text="Configure Keyboard Geometry",
+            command=self.run_keyboard_calibration,
+            bootstyle=PRIMARY,
         ).pack(side="left", expand=True, fill="x", padx=5)
 
-        # Camera Settings
-        camera_frame = ttk.LabelFrame(self.root, text="Camera Settings", padding=10)
-        camera_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Label(camera_frame, text="Camera index:").grid(row=0, column=0, sticky="w")
+        # Input Settings (Camera + MIDI)
+        input_frame = ttk.LabelFrame(self.root, text="Input Settings", padding=10)
+        input_frame.pack(fill="x", padx=10, pady=5)
+        # Camera row
+        ttk.Label(input_frame, text="Camera index:").grid(row=0, column=0, sticky="w", padx=5, pady=2)
         camera_combo = ttk.Combobox(
-            camera_frame, values=self.available_cameras, textvariable=self.selected_camera, width=10, bootstyle=INFO
-        )
-        camera_combo.grid(row=0, column=1, padx=5)
-        ttk.Label(
-            camera_frame,
-            text=(
-                f"Found {len(self.available_cameras)} camera(s)"
-                if self.available_cameras[0] != "No cameras detected"
-                else "No cameras detected"
-            ),
-        ).grid(row=0, column=2, sticky="w")
-
-        # MIDI Settings
-        midi_frame = ttk.LabelFrame(self.root, text="MIDI Settings", padding=10)
-        midi_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Label(midi_frame, text="MIDI input device:").grid(row=0, column=0, sticky="w")
-        midi_combo = ttk.Combobox(
-            midi_frame,
-            values=self.available_midi_devices,
-            textvariable=self.selected_midi_device,
-            width=25,
+            input_frame,
+            values=self.available_cameras,
+            textvariable=self.selected_camera,
+            width=input_width,
             bootstyle=INFO,
         )
-        midi_combo.grid(row=0, column=1, padx=5)
-        ttk.Label(
-            midi_frame,
-            text=(
-                f"Found {len(self.available_midi_devices)} MIDI device(s)"
-                if self.available_midi_devices[0] != "No MIDI devices detected"
-                else "No MIDI devices detected"
-            ),
-        ).grid(row=0, column=2, sticky="w")
+        camera_combo.grid(row=0, column=1, sticky="ew", padx=5, pady=2)
+        # MIDI row
+        ttk.Label(input_frame, text="MIDI input device:").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+        midi_combo = ttk.Combobox(
+            input_frame,
+            values=self.available_midi_devices,
+            textvariable=self.selected_midi_device,
+            width=input_width,
+            bootstyle=INFO,
+        )
+        midi_combo.grid(row=1, column=1, sticky="ew", padx=5, pady=2)
+
+        def refresh_midi_devices(event=None):
+            devices = self.get_available_midi_devices()
+            midi_combo["values"] = devices
+            current = self.selected_midi_device.get()
+            if current in devices:
+                midi_combo.set(current)
+            else:
+                midi_combo.set(devices[0])
+                self.selected_midi_device.set(devices[0])
+
+        midi_combo.bind("<Button-1>", refresh_midi_devices)
 
         # OSC Settings
         osc_frame = ttk.LabelFrame(self.root, text="OSC Settings", padding=10)
         osc_frame.pack(fill="x", padx=10, pady=5)
-        ttk.Label(osc_frame, text="OSC Host:").grid(row=0, column=0, sticky="w")
-        ttk.Entry(osc_frame, textvariable=self.osc_host, width=15).grid(row=0, column=1, padx=5)
-        ttk.Label(osc_frame, text="OSC Port:").grid(row=0, column=2, sticky="w")
-        ttk.Entry(osc_frame, textvariable=self.osc_port, width=8).grid(row=0, column=3, padx=5)
+        ttk.Label(osc_frame, text="OSC Host:").grid(row=0, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(osc_frame, textvariable=self.osc_host, width=input_width).grid(
+            row=0, column=1, sticky="ew", padx=5, pady=2
+        )
+        ttk.Label(osc_frame, text="OSC Port:").grid(row=1, column=0, sticky="w", padx=5, pady=2)
+        ttk.Entry(osc_frame, textvariable=self.osc_port, width=input_width).grid(
+            row=1, column=1, sticky="ew", padx=5, pady=2
+        )
 
         # Stream Control
         stream_frame = ttk.LabelFrame(self.root, text="Stream Control", padding=10)
@@ -118,9 +125,13 @@ class PianoToolboxApp:
         ttk.Label(stream_frame, text="Status:").pack(side="left")
         self.status_label = ttk.Label(stream_frame, textvariable=self.stream_status, bootstyle="danger")
         self.status_label.pack(side="left", padx=5)
-        ttk.Button(stream_frame, text="Start Stream", command=self.run_live_runner, bootstyle=SUCCESS, width=20).pack(
-            side="right"
-        )
+        ttk.Button(
+            stream_frame,
+            text="Start Stream",
+            command=self.run_live_runner,
+            bootstyle=SUCCESS,
+            width=20,
+        ).pack(side="right")
 
         # Notification
         ttk.Label(self.root, textvariable=self.notification_message, bootstyle="danger").pack(
@@ -143,16 +154,35 @@ class PianoToolboxApp:
         if self.streaming:
             return
         self.notification_message.set("")
+
+        # Check for MIDI device before starting
+        midi_device = self.selected_midi_device.get()
+        if not midi_device or "No MIDI" in midi_device or "Error" in midi_device:
+            self.notification_message.set(
+                "Error: No MIDI device detected. Please connect a MIDI device before starting the stream."
+            )
+            return
+
         self.streaming = True
         self.stream_status.set("Active")
         self.status_label.config(bootstyle="success")
 
         try:
             camera_index = self.selected_camera.get()
-            midi_device = self.selected_midi_device.get()
-            cmd = ["python", "live_runner.py", "--camera", str(camera_index)]
-            if midi_device and "No MIDI" not in midi_device and "Error" not in midi_device:
-                cmd.extend(["--midi-port", midi_device])
+            osc_ip = self.osc_host.get()
+            osc_port = self.osc_port.get()
+            cmd = [
+                "python",
+                "live_runner.py",
+                "--camera",
+                str(camera_index),
+                "--osc-ip",
+                str(osc_ip),
+                "--osc-port",
+                str(osc_port),
+                "--midi-port",
+                midi_device,
+            ]
             print(f"Running command: {' '.join(cmd)}")
             self.live_process = subprocess.Popen(cmd)
             self.root.after(1000, self.check_live_process)

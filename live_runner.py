@@ -5,6 +5,7 @@ import time
 import cv2
 import mido
 
+import osc_sender
 from datatypes import Image, MidiResult
 from processing_hub import hub
 
@@ -45,7 +46,7 @@ FPS = 30
 
 
 class MidiProcessor:
-    def __init__(self, port_name: str | None = None) -> None:
+    def __init__(self, port_name: str) -> None:
         self.port_name = port_name
         self.processing = False
         self.start_time = None
@@ -54,39 +55,15 @@ class MidiProcessor:
         self.last_poll_time = 0
         self.poll_interval = 0.01
 
-    def get_input_port(self) -> str:
-        """Get the MIDI input port, either specified or first available."""
-        available_ports = mido.get_input_names()  # type: ignore
+    def input_port_available(self) -> bool:
+        available_ports = mido.get_input_names()
         if not available_ports:
-            raise RuntimeError("No MIDI input ports available")
-
-        if self.port_name is None:
-            print("Available MIDI ports:")
-            for i, port in enumerate(available_ports):
-                print(f"{i}: {port}")
-
-            selected_port = available_ports[0]
-            print(f"Auto-selected: {selected_port}")
-            return selected_port
-        else:
-            try:
-                port_idx = int(self.port_name)
-                if 0 <= port_idx < len(available_ports):
-                    selected_port = available_ports[port_idx]
-                    print(f"Selected port index {port_idx}: {selected_port}")
-                    return selected_port
-                else:
-                    raise ValueError(f"MIDI port index {port_idx} out of range")
-            except ValueError:
-                # Not an integer, treat as port name
-                if self.port_name not in available_ports:
-                    raise ValueError(f"MIDI port '{self.port_name}' not found")
-                return self.port_name
+            return False
+        return self.port_name in available_ports
 
     def start_processing(self) -> None:
         """Start processing MIDI messages without recording."""
-        port_name = self.get_input_port()
-        self.input_port = mido.open_input(port_name)
+        self.input_port = mido.open_input(self.port_name)
         self.processing = True
 
         # Start the callback thread
@@ -94,7 +71,7 @@ class MidiProcessor:
         self.midi_thread.daemon = True
         self.midi_thread.start()
 
-        print(f"Processing MIDI from {port_name}...")
+        print(f"Processing MIDI from {self.port_name}...")
 
     def _process_callback(self) -> None:
         """Thread function to process MIDI messages."""
@@ -108,6 +85,7 @@ class MidiProcessor:
 
             self.last_poll_time = current_time
 
+            assert self.input_port is not None
             for msg in self.input_port.iter_pending():
                 if not msg.is_meta:
                     process_midi_event(msg)
@@ -203,12 +181,20 @@ class VideoProcessor:
 def main() -> None:
     # Parse command line arguments
     parser = argparse.ArgumentParser(description="Live processing of MIDI and video.")
-    parser.add_argument("--camera", type=int, default=0, help="Camera device index")
-    parser.add_argument("--midi-port", type=str, default=None, help="MIDI port name or index to use")
+    parser.add_argument("--camera", type=int, required=True, help="Camera device index")
+    parser.add_argument("--midi-port", type=str, required=True, help="MIDI port name to use")
+    parser.add_argument("--osc-port", type=int, default=9876, help="OSC port to use")
+    parser.add_argument("--osc-ip", type=str, default="127.0.0.1", help="OSC IP address to use")
+
     args = parser.parse_args()
 
     midi_processor = MidiProcessor(port_name=args.midi_port)
+    if not midi_processor.input_port_available():
+        print("MIDI port not available. Exiting.")
+        return
+
     video_processor = VideoProcessor(device=args.camera)
+    osc_sender.configure(args.osc_ip, args.osc_port)
 
     try:
         midi_processor.start_processing()

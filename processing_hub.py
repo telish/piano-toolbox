@@ -122,7 +122,7 @@ class ProcessingHub:
                 "fingers": fingers,
             }
             self.current_notes[msg.note] = midi_result
-            self.last_midi_result = dict(midi_result)
+            self.last_midi_result = midi_result
             self.send_note_on_osc(msg.note, msg.velocity, hand, fingers)
         elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
             fingers = []
@@ -159,12 +159,13 @@ class ProcessingHub:
         self.last_mp_result = track_hands.analyze_frame(img_input=img, img_output=self.last_image_output)
         assert self.last_mp_result is not None
         for pitch, note_properties in self.current_notes.items():
-            tip_on_key.find_tip_on_key(
+            u, v, hand, finger = tip_on_key.find_tip_on_key(
                 pitch,
                 note_properties,
                 self.last_mp_result,
                 img_output=self.last_image_output,
             )
+            osc_sender.send_message(f"/touch/uv", hand, finger, pitch, u, v)
 
 
 def _point_distance_to_quad(point: tuple[float, float], quad: Image) -> float:

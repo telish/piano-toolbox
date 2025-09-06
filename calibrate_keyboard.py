@@ -32,13 +32,7 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-class _CalibrateKeyboardState(TypedDict):
-    user_defined_points: List[CorrespondingPoints]
-    dragging_index: int
-    drag_threshold: int
-
-
-_state: _CalibrateKeyboardState = {
+_state = {
     "user_defined_points": [],
     "dragging_index": -1,
     "drag_threshold": 10,

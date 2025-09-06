@@ -4,7 +4,6 @@
 import argparse  # For command-line arguments
 import json
 import os
-import time
 
 import cv2
 import mido
