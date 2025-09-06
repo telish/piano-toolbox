@@ -1,6 +1,7 @@
 """Draw piano keys in 3D perspective on an image using homography."""
 
 import json
+import os
 
 import cv2
 import numpy as np
@@ -12,7 +13,7 @@ from datatypes import CorrespondingPoints, Image
 homography_matrix = None  # Homography matrix
 
 
-def init(keypoint_mappings_param: list[CorrespondingPoints] | None = None) -> None:
+def re_init(keypoint_mappings_param: list[CorrespondingPoints] | None = None) -> None:
     """
     Initialize global calibration variables by performing 3D calibration.
     If no keypoint mappings are provided, it will load them from a file.
@@ -27,8 +28,18 @@ def init(keypoint_mappings_param: list[CorrespondingPoints] | None = None) -> No
     if keypoint_mappings is None:
         json_path = utils.get_keyboard_geometry_file_path()
         assert json_path
-        with open(json_path, "r", encoding="utf-8") as file:
-            keypoint_mappings = json.load(file)["keypoint_mappings"]
+        try:
+            with open(json_path, "r", encoding="utf-8") as file:
+                keypoint_mappings = json.load(file)["keypoint_mappings"]
+        except FileNotFoundError:
+            km: list[CorrespondingPoints] = [
+                {"pixel": (100, 100), "object": (0.0, 0.0)},
+                {"pixel": (1500, 100), "object": (keyboard_geometry.KEYBOARD_WIDTH, 0)},
+                {"pixel": (1500, 200), "object": (keyboard_geometry.KEYBOARD_WIDTH, keyboard_geometry.WHITE_HEIGHT)},
+                {"pixel": (100, 200), "object": (0.0, keyboard_geometry.WHITE_HEIGHT)},
+            ]
+            keypoint_mappings = km
+            assert keypoint_mappings is not None
 
     object_points = []
     image_points = []
@@ -46,6 +57,9 @@ def init(keypoint_mappings_param: list[CorrespondingPoints] | None = None) -> No
 
     # Calculate homography with RANSAC for robustness
     homography_matrix, _ = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+
+
+re_init()  # Call this again if the calibration has changed and you want to update the homography matrix.
 
 
 def _draw_polygon(img: Image, points: Image, color: tuple[int, int, int]) -> None:
@@ -153,11 +167,12 @@ def draw_annotation(
 
 
 def main() -> None:
-    init()
     image_path = utils.get_keyboard_image_file_path()
-    img = cv2.imread(image_path)
+    img = None
+    if os.path.exists(image_path):
+        img = cv2.imread(image_path)
     if img is None:
-        raise FileNotFoundError(f"Image not found or unable to load: {image_path}")
+        img = np.full((1080, 1920, 3), 255, dtype=np.uint8)
     img = utils.flip_image(img)
 
     for midi_pitch in range(21, 109):

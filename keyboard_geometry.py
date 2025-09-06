@@ -78,7 +78,9 @@ def pitch_class(midi_pitch: int) -> str:
     return pitch_classes[c]
 
 
-left_at_bottom, left_at_top, right_at_bottom, right_at_top = [], [], [], []
+left_at_top: list[float] = []
+right_at_bottom: list[float] = []
+right_at_top: list[float] = []
 
 
 def re_init() -> None:
@@ -113,6 +115,8 @@ def re_init() -> None:
                     left_at_top.append(left_at_top[-1] + BLACK_WIDTH)
                 case "B":
                     left_at_top.append(left_at_top[-1] + B_TOP_WIDTH)
+                case _:
+                    assert False, f"Unexpected pitch class for midi pitch {pitch}"
 
     left_at_bottom = []
     for i, pitch in enumerate(range(21, 109)):
@@ -146,6 +150,8 @@ def re_init() -> None:
                     right_at_top[i] += A_TOP_WIDTH
                 case "B":
                     right_at_top[i] += B_TOP_WIDTH
+                case _:
+                    assert False, f"Unexpected pitch class for white key"
 
     right_at_bottom = left_at_bottom.copy()
     for i, pitch in enumerate(range(21, 109)):

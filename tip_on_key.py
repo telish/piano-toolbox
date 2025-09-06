@@ -1,5 +1,7 @@
 """Functions to find fingertip position on a piano key and convert to trapezoid coordinates."""
 
+import os
+
 import cv2
 import numpy as np
 
@@ -120,16 +122,11 @@ def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: Image) -> t
         - v=0 is the top side, v=1 is the bottom side
     """
     # Extract trapezoid points and convert to easier usable form
-    if trapezoid.shape[1] == 1:  # If shape (4,1,2)
-        p0 = trapezoid[0, 0]  # top-left
-        p3 = trapezoid[1, 0]  # bottom-left
-        p2 = trapezoid[2, 0]  # bottom-right
-        p1 = trapezoid[3, 0]  # top-right
-    else:  # If shape (4,2)
-        p0 = trapezoid[0]  # top-left
-        p3 = trapezoid[1]  # bottom-left
-        p2 = trapezoid[2]  # bottom-right
-        p1 = trapezoid[3]  # top-right
+    assert trapezoid.shape == (4, 1, 2)
+    p0: float = trapezoid[0, 0]  # top-left
+    p3: float = trapezoid[1, 0]  # bottom-left
+    p2: float = trapezoid[2, 0]  # bottom-right
+    p1: float = trapezoid[3, 0]  # top-right
 
     # Iterative approximation of bilinear coordinates
     # Start value in the middle
@@ -144,7 +141,8 @@ def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: Image) -> t
         computed_point = top + v * (bottom - top)
 
         # Check if we are close enough to the target point
-        error = np.linalg.norm(computed_point - point)
+        np_point = np.array(point, dtype=np.float32)
+        error = np.linalg.norm(computed_point - np_point)
         if error < tolerance:
             break
 
@@ -158,7 +156,7 @@ def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: Image) -> t
 
         # Calculate adjustment for u and v
         try:
-            delta = np.linalg.solve(jacobian, point - computed_point)
+            delta = np.linalg.solve(jacobian, np_point - computed_point)
             u += delta[0]
             v += delta[1]
         except np.linalg.LinAlgError:
@@ -170,15 +168,13 @@ def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: Image) -> t
 
 def test_interactive() -> None:
     """Interactive test with mouse clicks."""
-    draw_keys_3d.init()
-
     # Load image
     img_path = utils.get_keyboard_image_file_path()
-    img = cv2.imread(img_path)
+    img = None
+    if os.path.exists(img_path):
+        img = cv2.imread(img_path)
     if img is None:
-        print(f"Could not load image: {img_path}")
-        return
-
+        img = np.full((1080, 1920, 3), 255, dtype=np.uint8)
     img = utils.flip_image(img)
 
     # Draw key (e.g. C4 = MIDI 60)

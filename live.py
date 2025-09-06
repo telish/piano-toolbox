@@ -5,10 +5,6 @@ import mido
 import ttkbootstrap as ttk
 from ttkbootstrap.constants import INFO, PRIMARY, SUCCESS
 
-import draw_keys_3d
-
-draw_keys_3d.init()
-
 
 class PianoToolboxApp:
     def __init__(self, root: ttk.Window) -> None:
@@ -38,7 +34,7 @@ class PianoToolboxApp:
         self.build_ui()
 
     def get_available_cameras(self) -> list[str]:
-        available = []
+        available: list[str] = []
         for i in range(10):
             cap = cv2.VideoCapture(i)
             if cap.isOpened():

@@ -5,7 +5,6 @@ import time
 import cv2
 import mido
 
-import draw_keys_3d
 from datatypes import Image, MidiResult
 from processing_hub import hub
 
@@ -38,8 +37,6 @@ def process_frame(frame: Image) -> tuple[Image, float]:
     # Return both the processed frame and timing information
     return processed_frame, processing_time
 
-
-draw_keys_3d.init()
 
 # Configuration
 FRAME_WIDTH = 1920
@@ -89,7 +86,7 @@ class MidiProcessor:
     def start_processing(self) -> None:
         """Start processing MIDI messages without recording."""
         port_name = self.get_input_port()
-        self.input_port = mido.open_input(port_name)  # type: ignore
+        self.input_port = mido.open_input(port_name)
         self.processing = True
 
         # Start the callback thread
@@ -111,7 +108,7 @@ class MidiProcessor:
 
             self.last_poll_time = current_time
 
-            for msg in self.input_port.iter_pending():  # type: ignore
+            for msg in self.input_port.iter_pending():
                 if not msg.is_meta:
                     process_midi_event(msg)
 

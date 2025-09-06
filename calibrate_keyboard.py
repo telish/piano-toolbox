@@ -7,6 +7,7 @@ adjust key lengths, and save the calibration data and annotated image for furthe
 import argparse
 import json
 import os
+from typing import List, TypedDict
 
 import cv2
 import numpy as np
@@ -31,7 +32,13 @@ def parse_args() -> argparse.Namespace:
     return args
 
 
-_state = {
+class _CalibrateKeyboardState(TypedDict):
+    user_defined_points: List[CorrespondingPoints]
+    dragging_index: int
+    drag_threshold: int
+
+
+_state: _CalibrateKeyboardState = {
     "user_defined_points": [],
     "dragging_index": -1,
     "drag_threshold": 10,
@@ -221,11 +228,11 @@ def main(recording: str | None = None, live: int | None = None) -> None:
         elif len(_state["user_defined_points"]) == 4:
             draw_trapezoid(img_draw, _state["user_defined_points"])
             get_correspondences_without_projection(_state["user_defined_points"])
-            draw_keys_3d.init(_state["user_defined_points"])
+            draw_keys_3d.re_init(_state["user_defined_points"])
             draw_keys_3d.draw_keyboard(img_draw, (0, 200, 0))
         elif len(_state["user_defined_points"]) > 4:
             add_object_coords(_state["user_defined_points"])
-            draw_keys_3d.init(_state["user_defined_points"])
+            draw_keys_3d.re_init(_state["user_defined_points"])
             draw_keys_3d.draw_keyboard(img_draw, (0, 200, 0))
 
         # Add instructions

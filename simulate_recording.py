@@ -10,6 +10,7 @@ import cv2
 import mido
 
 import draw_keys_3d
+import keyboard_geometry
 import osc_sender
 import utils
 from datatypes import Image
@@ -196,7 +197,7 @@ def process_video_frame(event: dict, video_processor: VideoPlayer) -> None:
     img = utils.flip_image(img)
 
     # Time the frame processing
-    start_time = time.time()
+    # start_time = time.time()
     hub.process_frame(event["timestamp"], img)
     # print(f"Frame processing time: {processing_time*1000:.2f} ms")
 
@@ -227,8 +228,11 @@ def main():
 
     if os.path.exists(os.path.join(args.recording, "calibration")):
         utils.set_calibration_base_dir(args.recording)
+        keyboard_geometry.black_height = keyboard_geometry.load_black_height()
+        keyboard_geometry.re_init()  # Re-initialize with new calibration
+        draw_keys_3d.re_init()  # Re-initialize with new calibration
+
     osc_sender.configure(args.port_out)
-    draw_keys_3d.init()
 
     video_player = VideoPlayer(args.recording)
     all_events = get_all_events(args.recording)
