@@ -203,8 +203,6 @@ def process_video_frame(event: dict, video_processor: VideoPlayer) -> None:
     img = hub.last_image_output
     assert img is not None, "No image output from hub"
 
-    hub.draw_results(img)
-
     cv2.imshow("Simulate Recording", img)
     handle_keyboard_input(img)
 
@@ -231,7 +229,7 @@ def main():
         keyboard_geometry.re_init()  # Re-initialize with new calibration
         draw_keys_3d.re_init()  # Re-initialize with new calibration
 
-    osc_sender.configure(args.port_out)
+    osc_sender.configure("127.0.0.1", args.port_out)
 
     video_player = VideoPlayer(args.recording)
     all_events = get_all_events(args.recording)

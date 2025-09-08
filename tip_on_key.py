@@ -19,7 +19,11 @@ def find_tip_on_key(
 ) -> tuple[float, float, HandLiteral, int]:
     hand = note_properties["hand"]
     fingers = note_properties["fingers"]
-    if hand == "" or fingers == []:
+    if (
+        (hand == "" or fingers == [])
+        or (hand == "right" and not mp_result.right_visible)
+        or (hand == "left" and not mp_result.left_visible)
+    ):
         return float("nan"), float("nan"), "", -1
 
     tip_idx = track_hands.finger_to_tip_index[fingers[0]]

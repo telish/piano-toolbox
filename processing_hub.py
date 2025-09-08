@@ -3,6 +3,8 @@ Analysis hub provides the main entrance point for all analyses and coordinates r
 analysis modules.
 """
 
+import threading
+
 import mido
 import numpy as np
 from shapely.geometry import Point, Polygon
@@ -22,6 +24,7 @@ class ProcessingHub:
         self.current_notes: dict[int, MidiResult] = {}
         self.last_mp_result: TrackingResult = TrackingResult()
         self.last_image_output: Image | None = None
+        self._lock = threading.Lock()  # <-- Add a lock
 
     def _closest_hand_and_fingers(self, midi_pitch: int) -> tuple[HandLiteral, list[int]]:
         """Find the closest hand and fingers to the given MIDI pitch.
@@ -111,35 +114,35 @@ class ProcessingHub:
         draw_keys_3d.draw_keyboard(img, (0, 165, 255), outline_only=True)  # Orange color in BGR format
 
     def process_midi_event(self, timestamp: float, msg: mido.Message) -> None:
-        if msg.type == "note_on" and msg.velocity > 0:
-            hand, fingers = self._closest_hand_and_fingers(msg.note)
-
-            midi_result: MidiResult = {
-                "type": "note_on",
-                "pitch": msg.note,
-                "velocity": msg.velocity,
-                "hand": hand,
-                "fingers": fingers,
-            }
-            self.current_notes[msg.note] = midi_result
-            self.last_midi_result = midi_result
-            self.send_note_on_osc(msg.note, msg.velocity, hand, fingers)
-        elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
-            fingers = []
-            hand = ""
-            if msg.note in self.current_notes:
-                old_result = self.current_notes[msg.note]
-                fingers = old_result["fingers"]
-                hand = old_result["hand"]
-                del self.current_notes[msg.note]
-            self.last_midi_result = {
-                "type": "note_off",
-                "pitch": msg.note,
-                "velocity": msg.velocity,
-                "hand": hand,
-                "fingers": fingers,
-            }
-            self.send_note_off_osc(msg.note, hand, fingers)
+        with self._lock:
+            if msg.type == "note_on" and msg.velocity > 0:
+                hand, fingers = self._closest_hand_and_fingers(msg.note)
+                midi_result: MidiResult = {
+                    "type": "note_on",
+                    "pitch": msg.note,
+                    "velocity": msg.velocity,
+                    "hand": hand,
+                    "fingers": fingers,
+                }
+                self.current_notes[msg.note] = midi_result
+                self.last_midi_result = midi_result
+                self.send_note_on_osc(msg.note, msg.velocity, hand, fingers)
+            elif msg.type == "note_off" or (msg.type == "note_on" and msg.velocity == 0):
+                fingers = []
+                hand = ""
+                if msg.note in self.current_notes:
+                    old_result = self.current_notes[msg.note]
+                    fingers = old_result["fingers"]
+                    hand = old_result["hand"]
+                    del self.current_notes[msg.note]
+                self.last_midi_result = {
+                    "type": "note_off",
+                    "pitch": msg.note,
+                    "velocity": msg.velocity,
+                    "hand": hand,
+                    "fingers": fingers,
+                }
+                self.send_note_off_osc(msg.note, hand, fingers)
 
     def send_note_on_osc(self, midi_pitch: int, velocity: int, hand: str, fingers: list[int]) -> None:
         osc_sender.send_message(f"/note", midi_pitch, velocity)
@@ -155,17 +158,19 @@ class ProcessingHub:
             osc_sender.send_message(f"/{hand}/{finger}/note", midi_pitch, velocity)
 
     def process_frame(self, timestamp: float, img: Image) -> None:
-        self.last_image_output = img.copy()
-        self.last_mp_result = track_hands.analyze_frame(img_input=img, img_output=self.last_image_output)
-        assert self.last_mp_result is not None
-        for pitch, note_properties in self.current_notes.items():
-            u, v, hand, finger = tip_on_key.find_tip_on_key(
-                pitch,
-                note_properties,
-                self.last_mp_result,
-                img_output=self.last_image_output,
-            )
-            osc_sender.send_message(f"/touch/uv", hand, finger, pitch, u, v)
+        with self._lock:
+            self.last_image_output = img.copy()
+            self.last_mp_result = track_hands.analyze_frame(img_input=img, img_output=self.last_image_output)
+            assert self.last_mp_result is not None
+            for pitch, note_properties in self.current_notes.items():
+                u, v, hand, finger = tip_on_key.find_tip_on_key(
+                    pitch,
+                    note_properties,
+                    self.last_mp_result,
+                    img_output=self.last_image_output,
+                )
+                osc_sender.send_message(f"/touch/uv", hand, finger, pitch, u, v)
+            self.draw_results(self.last_image_output)
 
 
 def _point_distance_to_quad(point: tuple[float, float], quad: Image) -> float:

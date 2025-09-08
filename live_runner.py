@@ -84,7 +84,7 @@ class MidiProcessor:
 
             assert self.input_port is not None
             for msg in self.input_port.iter_pending():
-                if not msg.is_meta:
+                if msg.type == "note_on" or msg.type == "note_off":
                     process_midi_event(msg)
 
     def stop_processing(self) -> None:
@@ -140,6 +140,9 @@ class VideoProcessor:
         if not ret:
             return False
 
+        import utils
+
+        frame = utils.flip_image(frame)
         # Use the process_frame function defined at the top
         output_img, time_passed = process_frame(frame)
 
