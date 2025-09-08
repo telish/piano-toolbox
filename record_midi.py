@@ -1,13 +1,12 @@
 """Record MIDI messages from a specified input port and save them to a text file."""
 
-import argparse  # For command-line arguments
+import argparse
 import os
 import sys
 import time
 
 import mido
 
-# Parse command-line arguments
 parser = argparse.ArgumentParser(description="Record MIDI messages from input port.")
 parser.add_argument(
     "--port-index",
@@ -18,7 +17,7 @@ parser.add_argument(
 args = parser.parse_args()
 
 # List available MIDI input ports
-available_ports = mido.get_input_names()  # type: ignore
+available_ports = mido.get_input_names()
 if not available_ports:
     print("record-midi.py: No MIDI input ports found.")
     sys.exit(1)

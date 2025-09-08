@@ -32,12 +32,11 @@ def parse_args() -> argparse.Namespace:
         Parsed command line arguments.
     """
     parser = argparse.ArgumentParser(description="Calibrate camera orientation from recording or live camera feed")
-    input_group = parser.add_mutually_exclusive_group(required=False)  # Changed to False
+    input_group = parser.add_mutually_exclusive_group(required=False)
     input_group.add_argument("--recording", type=str, help="Path to a recording")
     input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
     args = parser.parse_args()
 
-    # If neither recording nor live is specified, default to live with index 0
     if args.recording is None and args.live is None:
         args.live = 0
 
@@ -72,7 +71,6 @@ def main() -> None:
         recording: Optional path to a recording directory.
         live: Optional camera index for live feed.
     """
-    # If direct parameters are provided, use them instead of parsing CLI args
     args = parse_args()
 
     image = None
@@ -118,8 +116,8 @@ def main() -> None:
         if _state["flip_vertical"]:
             img_draw = cv2.flip(img_draw, 0)
 
-        img_copy = utils.add_text_to_image(img_draw, text)
-        cv2.imshow("Keyboard View", img_copy)
+        utils.add_text_to_image(img_draw, text)
+        cv2.imshow("Keyboard View", img_draw)
 
         key = cv2.waitKey(1) & 0xFF
 

@@ -96,7 +96,7 @@ _hands_tracker = mp.solutions.hands.Hands(min_detection_confidence=0.7, min_trac
 
 if __name__ == "__main__":
     cap = cv2.VideoCapture(0)
-    osc_sender.configure(9876)
+    osc_sender.configure("127.0.0.1", 9876)
 
     while cap.isOpened():
         ret, img = cap.read()

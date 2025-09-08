@@ -25,7 +25,6 @@ def parse_args() -> argparse.Namespace:
     input_group.add_argument("--live", type=int, help="Camera index for live feed (default: 0)")
     args = parser.parse_args()
 
-    # If neither recording nor live is specified, default to live with index 0
     if args.recording is None and args.live is None:
         args.live = 0
 
@@ -67,7 +66,6 @@ def draw_trapezoid(img: Image, points: list[CorrespondingPoints]) -> None:
     """Draw the trapezoid based on selected points."""
 
     if len(points) > 1:
-        # For drawing the trapezoid, make sure points are in the correct order
         if len(points) == 4:
             sorted_points = get_correspondences_without_projection(points)
             ordered_points = [
@@ -75,7 +73,7 @@ def draw_trapezoid(img: Image, points: list[CorrespondingPoints]) -> None:
                 sorted_points[1]["pixel"],
                 sorted_points[3]["pixel"],
                 sorted_points[2]["pixel"],
-            ]  # Correct drawing order
+            ]
             cv2.polylines(
                 img,
                 [np.array(ordered_points, np.int32)],
@@ -84,7 +82,7 @@ def draw_trapezoid(img: Image, points: list[CorrespondingPoints]) -> None:
                 thickness=1,
             )
         else:
-            # For incomplete sets, just connect in the order clicked
+            # For incomplete sets, just connect the points
             all_pixel_coords = [p["pixel"] for p in _state["user_defined_points"]]
             cv2.polylines(
                 img,
@@ -118,10 +116,9 @@ def mouse_callback(event: int, x: int, y: int, _flags: int, _param: object) -> N
         all_pixel_coords = [p["pixel"] for p in _state["user_defined_points"]]
         _state["dragging_index"] = find_closest_point_index(x, y, all_pixel_coords, _state["drag_threshold"])
 
-        # If no nearby point and still room for more points
         if _state["dragging_index"] == -1:
             _state["user_defined_points"].append({"pixel": (x, y), "object": None})
-            # Start dragging the new point immediately
+            # Start dragging the new point
             _state["dragging_index"] = len(_state["user_defined_points"]) - 1
 
     elif event == cv2.EVENT_MOUSEMOVE:
@@ -131,7 +128,7 @@ def mouse_callback(event: int, x: int, y: int, _flags: int, _param: object) -> N
 
     elif event == cv2.EVENT_LBUTTONUP:
         # End dragging
-        _state["dragging_index"] = -1  # End dragging
+        _state["dragging_index"] = -1
 
 
 def save_coords(image: Image) -> None:
@@ -213,7 +210,6 @@ def main(recording: str | None = None, live: int | None = None) -> None:
 
         img_draw = utils.flip_image(img_draw)
 
-        # Draw points first
         draw_points(img_draw, _state["user_defined_points"])
 
         # Different rendering based on number of points
@@ -229,7 +225,6 @@ def main(recording: str | None = None, live: int | None = None) -> None:
             draw_keys_3d.re_init(_state["user_defined_points"])
             draw_keys_3d.draw_keyboard(img_draw, (0, 200, 0))
 
-        # Add instructions
         utils.add_text_to_image(img_draw, instructions, position="bottom-left")
 
         cv2.imshow("Draw Keyboard", img_draw)

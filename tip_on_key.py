@@ -59,21 +59,17 @@ def draw_tip_on_key(
         cv2.polylines(img, [pts], True, (255, 255, 255), 1)
 
     # Draw fingertip as a small square
-    square_size = 3  # Half side length of the square
+    square_size = 3
     x, y = int(tip_xy_coords[0]), int(tip_xy_coords[1])
     cv2.rectangle(
         img,
         (x - square_size, y - square_size),  # Top left corner
         (x + square_size, y + square_size),  # Bottom right corner
-        (255, 0, 0),  # Color (Blue)
-        -1,
-    )  # Filled
+        (255, 0, 0),  # Blue
+        -1,  # Filled
+    )
 
-    # Calculate trapezoid coordinates
     u, v = tip_uv_coords
-
-    # Draw coordinate axes inside the trapezoid
-    # Horizontal line at v-coordinate
     p0 = key_bounding_box[0, 0]  # top-left
     p1 = key_bounding_box[1, 0]  # bottom-left
     p3 = key_bounding_box[3, 0]  # top-right
@@ -125,7 +121,6 @@ def point_to_trapezoid_coords(point: tuple[float, float], trapezoid: Image) -> t
         - u=0 is the left side, u=1 is the right side
         - v=0 is the top side, v=1 is the bottom side
     """
-    # Extract trapezoid points and convert to easier usable form
     assert trapezoid.shape == (4, 1, 2)
     p0: float = trapezoid[0, 0]  # top-left
     p3: float = trapezoid[1, 0]  # bottom-left
@@ -195,7 +190,6 @@ def test_interactive() -> None:
             draw_tip_on_key(img_copy, key_outline, (x, y), (u, v), show_bb=True)
             cv2.imshow("Test Trapezoid Coordinates", img_copy)
 
-    # Set up window
     cv2.namedWindow("Test Trapezoid Coordinates")
     cv2.setMouseCallback("Test Trapezoid Coordinates", mouse_callback)
 

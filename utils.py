@@ -65,7 +65,7 @@ def add_text_to_image(
     text_color: tuple[int, int, int] = (255, 255, 255),
     bg_color: tuple[int, int, int] = (0, 0, 0),
     max_text_width: int | None = None,
-) -> Image:
+) -> None:
     """
     Add multiline text to an image with background, supporting both user-defined
     and automatic line breaks based on available width.
@@ -160,5 +160,3 @@ def add_text_to_image(
             cv2.LINE_AA,
         )
         current_y += text_heights[i] + padding
-
-    return img

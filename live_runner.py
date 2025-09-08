@@ -10,10 +10,8 @@ from datatypes import Image, MidiResult
 from processing_hub import hub
 
 
-# Define processing functions at the top of the file
 def process_midi_event(event: mido.Message) -> MidiResult:
     """Process a single MIDI event and pass it to the analysis hub."""
-    # Measure time spent in MIDI processing
     midi_start = time.time()
     hub.process_midi_event(midi_start, event)
     midi_process_time = time.time() - midi_start
@@ -24,19 +22,16 @@ def process_midi_event(event: mido.Message) -> MidiResult:
     return hub.last_midi_result
 
 
-def process_frame(frame: Image) -> tuple[Image, float]:
+def process_frame(img: Image) -> tuple[Image, float]:
     """Process a single video frame and pass it to the analysis hub."""
-    # Time the frame processing
     start_time = time.time()
-    hub.process_frame(start_time, frame)
+    hub.process_frame(start_time, img)
     processing_time = time.time() - start_time
 
-    # Get the processed output
-    processed_frame = hub.last_image_output
-    assert processed_frame is not None
+    output_img = hub.last_image_output
+    assert output_img is not None
 
-    # Return both the processed frame and timing information
-    return processed_frame, processing_time
+    return output_img, processing_time
 
 
 FPS = 30.0  # Target frames per second
@@ -63,7 +58,6 @@ class MidiProcessor:
         self.input_port = mido.open_input(self.port_name)
         self.processing = True
 
-        # Start the callback thread
         self.midi_thread = threading.Thread(target=self._process_callback)
         self.midi_thread.daemon = True
         self.midi_thread.start()
@@ -73,7 +67,6 @@ class MidiProcessor:
     def _process_callback(self) -> None:
         """Thread function to process MIDI messages."""
         while self.processing:
-            # Only poll at specific intervals to reduce CPU usage
             current_time = time.time()
             if current_time - self.last_poll_time < self.poll_interval:
                 # Sleep to prevent busy-waiting
@@ -113,19 +106,14 @@ class VideoProcessor:
         if not self.cap.isOpened():
             raise RuntimeError(f"Could not open video device {self.device}")
 
-        # self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, self.width)
-        # self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, self.height)
-
-        # Get actual properties
         actual_width = int(self.cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         actual_height = int(self.cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         actual_fps = self.cap.get(cv2.CAP_PROP_FPS)
 
         print(f"Camera initialized: {actual_width}x{actual_height} @ {actual_fps} FPS")
 
-        # Create a window for displaying the video
         cv2.namedWindow(self.display_window_name, cv2.WINDOW_NORMAL)
-        cv2.resizeWindow(self.display_window_name, 1280, 720)  # Resizable window with initial size
+        cv2.resizeWindow(self.display_window_name, 1280, 720)
 
         self.processing = True
         self.frame_count = 0
@@ -143,10 +131,7 @@ class VideoProcessor:
         import utils
 
         frame = utils.flip_image(frame)
-        # Use the process_frame function defined at the top
         output_img, time_passed = process_frame(frame)
-
-        # Display the frame
         cv2.imshow(self.display_window_name, output_img)
 
         self.frame_count += 1
@@ -162,14 +147,12 @@ class VideoProcessor:
             self.cap.release()
             self.cap = None
 
-        # Close the display window
         cv2.destroyWindow(self.display_window_name)
 
         print(f"Video processing stopped after {self.frame_count} frames")
 
 
 def main() -> None:
-    # Parse command line arguments
     parser = argparse.ArgumentParser(description="Live processing of MIDI and video.")
     parser.add_argument("--camera", type=int, required=True, help="Camera device index")
     parser.add_argument("--midi-port", type=str, required=True, help="MIDI port name to use")
@@ -197,7 +180,6 @@ def main() -> None:
             if not video_processor.process_frame():
                 break
 
-            # Check for keyboard interrupt
             key = cv2.waitKey(1) & 0xFF
             if key == ord("q"):
                 print("\nProcessing stopped by user (q key).")

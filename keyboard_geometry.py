@@ -213,12 +213,10 @@ def main() -> None:
 
     # Draw keys and labels
     for i, pitch in enumerate(range(21, 109)):
-        # Get points and add y-offset
-        key_pts = np.array([key_points(pitch)], dtype=np.int32).reshape(-1, 1, 2)  # key_pts.shape = (n, 1, 2)
+        key_pts = np.array([key_points(pitch)], dtype=np.int32).reshape(-1, 1, 2)
 
         cv2.polylines(img, [key_pts], isClosed=True, color=(0, 200, 0), thickness=2)
 
-        # Also shift text
         cv2.putText(
             img,
             f"{pitch}",
@@ -229,8 +227,7 @@ def main() -> None:
             1,
         )
 
-        # Also shift bounding box
-        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32).reshape(-1, 1, 2)  # key_pts.shape = (n, 1, 2)
+        box_pts = np.array([key_bounding_box(pitch)], dtype=np.int32).reshape(-1, 1, 2)
         box_pts[:, 0, 1] += int(WHITE_HEIGHT + 2)
 
         cv2.polylines(img, [box_pts], isClosed=True, color=(200, 0, 0), thickness=2)

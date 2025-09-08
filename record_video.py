@@ -11,7 +11,6 @@ import cv2
 
 
 def parse_args() -> argparse.Namespace:
-    # Parse command-line arguments
     parser = argparse.ArgumentParser(description="Record video from webcam.")
     parser.add_argument(
         "--camera-index",
@@ -42,7 +41,6 @@ def main() -> None:
         show_image: Optional flag to show image during recording
         output_dir: Optional output directory for the video files
     """
-    # Use provided arguments or parse from command line
     args = parse_args()
 
     # Create output directory
@@ -82,12 +80,10 @@ def main() -> None:
 
     # Signal handler for graceful exit
     def signal_handler(_sig: int, _frame: object) -> None:
-        # Close video writer and camera
         out.release()
         cap.release()
         cv2.destroyAllWindows()
 
-        # Save timestamps to file
         with open(timestamps_filename, "w", encoding="utf-8") as f:
             json.dump(timestamps, f)
 
@@ -110,7 +106,6 @@ def main() -> None:
             out.write(frame)
             timestamps.append({"timestamp": time.time(), "frame_number": len(timestamps)})
 
-            # Show the image in a window if requested
             if args.show_image:
                 cv2.imshow("Recording", frame)
 
@@ -120,7 +115,6 @@ def main() -> None:
     except KeyboardInterrupt:
         signal_handler(signal.SIGINT, None)
 
-    # Cleanup (in case loop exits normally)
     out.release()
     cap.release()
     cv2.destroyAllWindows()

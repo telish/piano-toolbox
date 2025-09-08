@@ -102,7 +102,6 @@ def draw_key(
 
 def draw_keyboard(img: Image, color: tuple[int, int, int], outline_only: bool = False) -> Image:
     if outline_only:
-        # Draw only the outline of the keyboard
         ps = keyboard_geometry.KEYBOARD_OUTLINE
         points = [
             ps["top-left"],
@@ -153,7 +152,6 @@ def draw_annotation(
         bg_y2 = y + bg_padding
         cv2.rectangle(img, (bg_x1, bg_y1), (bg_x2, bg_y2), (255, 255, 255), -1)
 
-        # Draw text
         cv2.putText(
             img,
             annotation,

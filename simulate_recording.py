@@ -24,8 +24,7 @@ def parse_midi_msgs(filename: str) -> list[dict]:
             for line in file:
                 try:
                     timestamp, msg_text = line.strip().split(": ", 1)
-                    timestamp = float(timestamp)  # Convert to float
-                    # Convert text to mido Message
+                    timestamp = float(timestamp)
                     msg = mido.Message.from_str(msg_text)
                     result.append({"timestamp": timestamp, "type": "midi", "message": msg})
                 except ValueError as e:
@@ -53,50 +52,15 @@ def parse_video_timestamps(timestamps_file: str) -> list[dict]:
 
 def parse_video(path: str) -> list[dict]:
     """Read video file and timestamps"""
-    # Read timestamps
     timestamps_file = os.path.join(path, "timestamps.json")
     if not os.path.exists(timestamps_file):
         raise FileNotFoundError(f"Timestamps file not found: {timestamps_file}")
 
-    # Open video file
     video_file = os.path.join(path, "recording.avi")
     if not os.path.exists(video_file):
         raise FileNotFoundError(f"Video file not found: {video_file}")
 
     return parse_video_timestamps(timestamps_file)
-
-
-def draw_text(img: Image, instruction_text: str):
-    font = cv2.FONT_HERSHEY_SIMPLEX
-    text_size = cv2.getTextSize(instruction_text, font, 0.7, 2)[0]
-
-    # Position at bottom of the image
-    text_x = 10
-    text_y = img.shape[0] - 20
-
-    # Draw background rectangle
-    cv2.rectangle(
-        img,
-        (text_x - 5, text_y - text_size[1] - 5),
-        (text_x + text_size[0] + 5, text_y + 5),
-        (0, 0, 0),
-        -1,
-    )
-
-    # Draw text
-    cv2.putText(
-        img,
-        instruction_text,
-        (text_x, text_y),
-        font,
-        0.7,
-        (255, 255, 255),
-        2,
-        cv2.LINE_AA,
-    )
-
-    # Update the display with the text
-    cv2.imshow("Simulate Recording", img)
 
 
 skip_to_next_note = {
@@ -117,7 +81,8 @@ def handle_keyboard_input(img: Image) -> None:
         instruction_text = (
             "Press 'f' for next frame, 'n' for the next note_on or note_off, 'e' to continue until the end, 'q' to quit"
         )
-        draw_text(img, instruction_text)
+        utils.add_text_to_image(img, instruction_text)
+        cv2.imshow("Simulate Recording", img)
 
         while True:
             key = cv2.waitKey(0) & 0xFF
@@ -138,6 +103,7 @@ def handle_keyboard_input(img: Image) -> None:
                 cv2.destroyAllWindows()
                 exit(0)
     else:
+        cv2.imshow("Simulate Recording", img)
         cv2.waitKey(1)  # Just to update the window without blocking
 
 
@@ -203,7 +169,6 @@ def process_video_frame(event: dict, video_processor: VideoPlayer) -> None:
     img = hub.last_image_output
     assert img is not None, "No image output from hub"
 
-    cv2.imshow("Simulate Recording", img)
     handle_keyboard_input(img)
 
 
