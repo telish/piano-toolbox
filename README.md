@@ -1,5 +1,19 @@
 # Piano Toolbox for Gesture and Movement Analysis
 
+## Installation
+
+If you are using virtual environments on macOS and installed python 3.11 with homebrew, you  need to install Tcl/Tk before creating the venv:
+
+```bash
+brew install python-tk@3.11
+```
+
+Install dependencies:
+
+```bash
+pip install -r requirements.txt
+```
+
 ## Calibration
 
 Capture a photo of the keyboard. Place the keyboard photo in the `calibration/keyboard` directory.
