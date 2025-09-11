@@ -3,14 +3,14 @@
 		"fileversion" : 1,
 		"appversion" : 		{
 			"major" : 8,
-			"minor" : 6,
-			"revision" : 5,
+			"minor" : 5,
+			"revision" : 3,
 			"architecture" : "x64",
 			"modernui" : 1
 		}
 ,
 		"classnamespace" : "box",
-		"rect" : [ 1549.0, 344.0, 1046.0, 646.0 ],
+		"rect" : [ 166.0, 87.0, 1046.0, 646.0 ],
 		"bglocked" : 0,
 		"openinpresentation" : 0,
 		"default_fontsize" : 12.0,
@@ -189,7 +189,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 530.864239931106567, 54.320991992950439, 144.0, 33.0 ],
-					"presentation_linecount" : 3,
 					"text" : "3) Testing with simulate_recording.py"
 				}
 
@@ -226,7 +225,6 @@
 					"numinlets" : 1,
 					"numoutlets" : 0,
 					"patching_rect" : [ 387.654351949691772, 54.320991992950439, 122.0, 33.0 ],
-					"presentation_linecount" : 7,
 					"text" : "2) Testing with \nshow-results.maxpat"
 				}
 
@@ -435,7 +433,6 @@
 							"parameter_longname" : "live.gain~[5]",
 							"parameter_mmax" : 6.0,
 							"parameter_mmin" : -70.0,
-							"parameter_modmode" : 0,
 							"parameter_shortname" : "live.gain~",
 							"parameter_type" : 0,
 							"parameter_unitstyle" : 4
@@ -479,8 +476,8 @@
 					"numinlets" : 2,
 					"numoutlets" : 1,
 					"outlettype" : [ "signal" ],
-					"patching_rect" : [ 344.444471955299377, 458.024727940559387, 248.0, 22.0 ],
-					"text" : "poly~ filtered-saw 16 @midimode 1 @zone 0"
+					"patching_rect" : [ 344.444471955299377, 458.024727940559387, 200.0, 22.0 ],
+					"text" : "poly~ fm 16 @midimode 1 @zone 0"
 				}
 
 			}
