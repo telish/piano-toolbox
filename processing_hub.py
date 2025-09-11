@@ -4,6 +4,7 @@ analysis modules.
 """
 
 import threading
+import time
 
 import mido
 import numpy as np
@@ -13,6 +14,7 @@ import draw_keys_3d
 import osc_sender
 import tip_on_key
 import track_hands
+import utils
 from datatypes import HandLiteral, Image, MidiResult, TrackingResult
 
 
@@ -158,6 +160,7 @@ class ProcessingHub:
             osc_sender.send_message(f"/{hand}/{finger}/note", midi_pitch, velocity)
 
     def process_frame(self, timestamp: float, img: Image) -> None:
+        start_time = time.perf_counter()
         with self._lock:
             self.last_image_output = img.copy()
             self.last_mp_result = track_hands.analyze_frame(img_input=img, img_output=self.last_image_output)
@@ -171,6 +174,8 @@ class ProcessingHub:
                 )
                 osc_sender.send_message(f"/touch/uv", hand, finger, pitch, u, v)
             self.draw_results(self.last_image_output)
+        elapsed = time.perf_counter() - start_time
+        utils.add_text_to_image(self.last_image_output, f"Achievable FPS = {1.0/elapsed:.1f}")
 
 
 def _point_distance_to_quad(point: tuple[float, float], quad: Image) -> float:
